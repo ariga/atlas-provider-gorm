@@ -80,7 +80,7 @@ func runprog(src []byte) (string, error) {
 	if err := os.MkdirAll(".gormschema", os.ModePerm); err != nil {
 		return "", err
 	}
-	target := fmt.Sprintf(".gormschema/%s.go", filename("hi"))
+	target := fmt.Sprintf(".gormschema/%s.go", filename("gorm"))
 	if err := os.WriteFile(target, src, 0644); err != nil {
 		return "", fmt.Errorf("gormschema: write file %s: %w", target, err)
 	}

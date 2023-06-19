@@ -12,16 +12,17 @@ import (
 	"gorm.io/gorm"
 )
 
-func New(dialect string) *loader {
-	return &loader{dialect: dialect}
+// New returns a new Loader.
+func New(dialect string) *Loader {
+	return &Loader{dialect: dialect}
 }
 
-// loader is a loader for gorm schema.
-type loader struct {
+// Loader is a Loader for gorm schema.
+type Loader struct {
 	dialect string
 }
 
-func (l *loader) Load(models ...any) (string, error) {
+func (l *Loader) Load(models ...any) (string, error) {
 	var di gorm.Dialector
 	switch l.dialect {
 	case "sqlite":
