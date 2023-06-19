@@ -8,8 +8,8 @@ type User struct {
 }
 
 type Pet struct {
-	ID   uint
-	Name string `gorm:"column:pet_name"`
+	ID   uint `gorm:"column:foo"`
+	Name string
 }
 
 type Toy struct {

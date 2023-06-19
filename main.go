@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 	"text/template"
 	"time"
@@ -28,11 +29,12 @@ var (
 
 func main() {
 	var cli struct {
-		Load LoadCmd `cmd`
+		Load LoadCmd `cmd:""`
 	}
 	ctx := kong.Parse(&cli)
 	if err := ctx.Run(); err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, err) // nolint: errcheck
+		os.Exit(1)
 	}
 }
 
@@ -44,7 +46,7 @@ type LoadCmd struct {
 	out     io.Writer
 }
 
-func (c *LoadCmd) Run(ctx context.Context) error {
+func (c *LoadCmd) Run(_ context.Context) error {
 	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedModule | packages.NeedDeps}
 	pkgs, err := packages.Load(cfg, c.Path)
 	if err != nil {
@@ -61,11 +63,11 @@ func (c *LoadCmd) Run(ctx context.Context) error {
 	}
 	source, err := format.Source(buf.Bytes())
 	if err != nil {
-		panic(err)
+		return err
 	}
 	s, err := runprog(source)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	if c.out == nil {
 		c.out = os.Stdout
@@ -78,33 +80,26 @@ func runprog(src []byte) (string, error) {
 	if err := os.MkdirAll(".gormschema", os.ModePerm); err != nil {
 		return "", err
 	}
-	target := fmt.Sprintf(".atlasloader/%s.go", filename("hi"))
+	target := fmt.Sprintf(".gormschema/%s.go", filename("hi"))
 	if err := os.WriteFile(target, src, 0644); err != nil {
 		return "", fmt.Errorf("gormschema: write file %s: %w", target, err)
 	}
-	defer os.RemoveAll(".atlasloader")
-	return gorun(target, nil)
+	defer os.RemoveAll(".gormschema")
+	return gorun(target)
 }
 
 // run 'go run' command and return its output.
-func gorun(target string, buildFlags []string) (string, error) {
-	s, err := gocmd("run", target, buildFlags)
+func gorun(target string) (string, error) {
+	s, err := gocmd("run", target)
 	if err != nil {
-		return "", fmt.Errorf("entc/load: %s", err)
+		return "", fmt.Errorf("gormschema: %s", err)
 	}
 	return s, nil
 }
 
-// golist checks if 'go list' can be executed on the given target.
-func golist(target string, buildFlags []string) error {
-	_, err := gocmd("list", target, buildFlags)
-	return err
-}
-
 // goCmd runs a go command and returns its output.
-func gocmd(command, target string, buildFlags []string) (string, error) {
+func gocmd(command, target string) (string, error) {
 	args := []string{command}
-	args = append(args, buildFlags...)
 	args = append(args, target)
 	cmd := exec.Command("go", args...)
 	stderr := bytes.NewBuffer(nil)
@@ -181,7 +176,10 @@ func isGORMModel(decl any) bool {
 	}
 	// Look for gorm: tag.
 	for _, f := range st.Fields.List {
-		if f.Tag != nil && reflect.StructTag(f.Tag.Value).Get("gorm") != "" {
+		if f.Tag == nil {
+			continue
+		}
+		if t := strings.Trim(f.Tag.Value, "`"); reflect.StructTag(t).Get("gorm") != "" {
 			return true
 		}
 	}
