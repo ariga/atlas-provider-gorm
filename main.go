@@ -75,12 +75,12 @@ func (c *LoadCmd) Run(ctx context.Context) error {
 }
 
 func runprog(src []byte) (string, error) {
-	if err := os.MkdirAll(".atlasloader", os.ModePerm); err != nil {
+	if err := os.MkdirAll(".gormschema", os.ModePerm); err != nil {
 		return "", err
 	}
 	target := fmt.Sprintf(".atlasloader/%s.go", filename("hi"))
 	if err := os.WriteFile(target, src, 0644); err != nil {
-		return "", fmt.Errorf("entc/load: write file %s: %w", target, err)
+		return "", fmt.Errorf("gormschema: write file %s: %w", target, err)
 	}
 	defer os.RemoveAll(".atlasloader")
 	return gorun(target, nil)
@@ -181,7 +181,7 @@ func isGORMModel(decl any) bool {
 	}
 	// Look for gorm: tag.
 	for _, f := range st.Fields.List {
-		if f.Tag != nil && strings.Contains(f.Tag.Value, `gorm:"`) {
+		if f.Tag != nil && reflect.StructTag(f.Tag.Value).Get("gorm") != "" {
 			return true
 		}
 	}
