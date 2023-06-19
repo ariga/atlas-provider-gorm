@@ -25,7 +25,7 @@ func TestDriver(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "3.30.1", version)
 	}
-	hi, ok := Get("t1")
+	hi, ok := Session("t1")
 	require.True(t, ok)
 	require.Len(t, hi.Queries, 1)
 }

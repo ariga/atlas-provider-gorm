@@ -17,13 +17,13 @@ func init() {
 }
 
 var (
-	sessions = map[string]*Session{}
+	sessions = map[string]*session{}
 	mu       sync.Mutex
 )
 
 type (
-	// Session is a session of recordriver which records queries and statements.
-	Session struct {
+	// session is a session of recordriver which records queries and statements.
+	session struct {
 		Queries    []string
 		Statements []string
 		responses  map[string]*Response
@@ -45,8 +45,8 @@ type (
 	emptyResult struct{}
 )
 
-// StrStmts returns the statements as a string, separated by semicolons and newlines.
-func (s *Session) Stmts() string {
+// Stmts returns the statements as a string, separated by semicolons and newlines.
+func (s *session) Stmts() string {
 	var sb strings.Builder
 	for _, stmt := range s.Statements {
 		sb.WriteString(stmt)
@@ -55,8 +55,8 @@ func (s *Session) Stmts() string {
 	return sb.String()
 }
 
-// Get returns the session with the given name and reports whether it exists.
-func Session(name string) (*Session, bool) {
+// Session returns the session with the given name and reports whether it exists.
+func Session(name string) (*session, bool) {
 	mu.Lock()
 	defer mu.Unlock()
 	h, ok := sessions[name]
@@ -64,15 +64,15 @@ func Session(name string) (*Session, bool) {
 }
 
 // SetResponse sets the response for the given session and query.
-func SetResponse(session string, query string, resp *Response) {
+func SetResponse(s string, query string, resp *Response) {
 	mu.Lock()
 	defer mu.Unlock()
-	if _, ok := sessions[session]; !ok {
-		sessions[session] = &Session{
+	if _, ok := sessions[s]; !ok {
+		sessions[s] = &session{
 			responses: make(map[string]*Response),
 		}
 	}
-	sessions[session].responses[query] = resp
+	sessions[s].responses[query] = resp
 }
 
 // Open returns a new connection to the database.
@@ -80,7 +80,7 @@ func (d *drv) Open(name string) (driver.Conn, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if _, ok := sessions[name]; !ok {
-		sessions[name] = &Session{
+		sessions[name] = &session{
 			responses: make(map[string]*Response),
 		}
 	}
@@ -88,20 +88,20 @@ func (d *drv) Open(name string) (driver.Conn, error) {
 }
 
 // Prepare returns a prepared statement, bound to this connection.
-func (mc *conn) Prepare(query string) (driver.Stmt, error) {
-	return &stmt{query: query, session: mc.session}, nil
+func (c *conn) Prepare(query string) (driver.Stmt, error) {
+	return &stmt{query: query, session: c.session}, nil
 }
 
 // Close closes the connection.
-func (mc *conn) Close() error {
+func (c *conn) Close() error {
 	mu.Lock()
 	defer mu.Unlock()
-	delete(sessions, mc.session)
+	delete(sessions, c.session)
 	return nil
 }
 
 // Begin starts and returns a new transaction.
-func (mc *conn) Begin() (driver.Tx, error) {
+func (c *conn) Begin() (driver.Tx, error) {
 	return &tx{}, nil
 }
 
@@ -127,28 +127,28 @@ func (*stmt) NumInput() int {
 }
 
 // Exec executes a query that doesn't return rows, such as an CREATE or ALTER TABLE.
-func (ms *stmt) Exec(_ []driver.Value) (driver.Result, error) {
+func (s *stmt) Exec(_ []driver.Value) (driver.Result, error) {
 	mu.Lock()
 	defer mu.Unlock()
-	sessions[ms.session].Statements = append(sessions[ms.session].Statements, ms.query)
+	sessions[s.session].Statements = append(sessions[s.session].Statements, s.query)
 	return emptyResult{}, nil
 }
 
 // Query executes a query that may return rows, such as an SELECT.
-func (ms *stmt) Query(_ []driver.Value) (driver.Rows, error) {
+func (s *stmt) Query(_ []driver.Value) (driver.Rows, error) {
 	mu.Lock()
 	defer mu.Unlock()
-	s := ms.session
-	sessions[s].Queries = append(sessions[s].Queries, ms.query)
-	if resp, ok := sessions[s].responses[ms.query]; ok {
+	sess := s.session
+	sessions[sess].Queries = append(sessions[sess].Queries, s.query)
+	if resp, ok := sessions[sess].responses[s.query]; ok {
 		return resp, nil
 	}
 	return &Response{}, nil
 }
 
 // Columns returns the names of the columns in the result set.
-func (*Response) Columns() []string {
-	return mr.Cols
+func (r *Response) Columns() []string {
+	return r.Cols
 }
 
 // Close closes the rows iterator. It is a noop.
@@ -157,12 +157,12 @@ func (*Response) Close() error {
 }
 
 // Next is called to populate the next row of data into the provided slice.
-func (mr *Response) Next(dest []driver.Value) error {
-	if len(mr.Data) == 0 {
+func (r *Response) Next(dest []driver.Value) error {
+	if len(r.Data) == 0 {
 		return io.EOF
 	}
-	copy(dest, mr.Data[0])
-	mr.Data = mr.Data[1:]
+	copy(dest, r.Data[0])
+	r.Data = r.Data[1:]
 	return nil
 }
 
