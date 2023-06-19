@@ -161,9 +161,7 @@ func (mr *Response) Next(dest []driver.Value) error {
 	if len(mr.Data) == 0 {
 		return io.EOF
 	}
-	for i, v := range mr.Data[0] {
-		dest[i] = v
-	}
+	copy(dest, mr.Data[0])
 	mr.Data = mr.Data[1:]
 	return nil
 }
