@@ -58,9 +58,9 @@ func (l *loader) Load(models ...any) (string, error) {
 	if err := db.Migrator().CreateTable(models...); err != nil {
 		return "", err
 	}
-	his, ok := recordriver.Session("gorm")
+	s, ok := recordriver.Session("gorm")
 	if !ok {
 		return "", err
 	}
-	return his.Stmts(), nil
+	return s.Stmts(), nil
 }

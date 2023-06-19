@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	{{- range .Imports }}
-    	"{{ . }}"
-    {{- end}}
+		"{{ . }}"
+	{{- end}}
 	"ariga.io/atlas-provider-gorm/internal/gormschema"
 	_ "ariga.io/atlas-provider-gorm/internal/recordriver"
 )
 
 func main() {
-	load, err := gormschema.New("{{ .Dialect }}").Load(
+	stmts, err := gormschema.New("{{ .Dialect }}").Load(
 		{{- range .Models }}
 			&{{ .PkgName }}.{{ .Name }}{},
 		{{- end }}
@@ -19,5 +19,5 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(load)
+	io.WriteString(os.Stdout, stmts)
 }
