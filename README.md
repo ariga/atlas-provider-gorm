@@ -15,6 +15,11 @@ curl -sSf https://atlasgo.sh | sh
 ```
 See [atlasgo.io](https://atlasgo.io/getting-started#installation) for more installation options.
 
+Install the provider by running:
+```bash
+go get -u ariga.io/atlas-provider-gorm
+``` 
+
 #### Standalone 
 
 If all of your GORM models exist in a single package, and either embed `gorm.Model` or contain `gorm` struct tags, 
@@ -29,6 +34,7 @@ data "external_schema" "gorm" {
     "run",
     "-mod=mod",
     "ariga.io/atlas-provider-gorm",
+    "load",
     "--path", "./path/to/models",
     "--dialect", "mysql", // | postgres | sqlite
   ]

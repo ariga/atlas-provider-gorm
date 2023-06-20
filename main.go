@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -46,7 +45,7 @@ type LoadCmd struct {
 	out     io.Writer
 }
 
-func (c *LoadCmd) Run(_ context.Context) error {
+func (c *LoadCmd) Run() error {
 	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedModule | packages.NeedDeps}
 	pkgs, err := packages.Load(cfg, c.Path)
 	if err != nil {
