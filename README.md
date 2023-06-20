@@ -13,11 +13,11 @@ Install Atlas from macOS or Linux by running:
 ```bash
 curl -sSf https://atlasgo.sh | sh
 ```
-See [atlasgo.io](https://atlasgo.io) for more installation options.
+See [atlasgo.io](https://atlasgo.io/getting-started#installation) for more installation options.
 
 #### Standalone 
 
-If all of your GORM models exist in a single package, and either embed `gorm.Model` or contain `gorm:""` tags, 
+If all of your GORM models exist in a single package, and either embed `gorm.Model` or contain `gorm` struct tags, 
 you can use the provider directly to load your GORM schema into Atlas.
 
 In your project directory, create a new file named `atlas.hcl` with the following contents:
