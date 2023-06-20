@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -17,7 +16,7 @@ func TestLoad(t *testing.T) {
 				Dialect: dialect,
 				out:     &buf,
 			}
-			err := cmd.Run(context.Background())
+			err := cmd.Run()
 			require.NoError(t, err)
 			require.Contains(t, buf.String(), "CREATE TABLE")
 			require.Contains(t, buf.String(), "pets")
