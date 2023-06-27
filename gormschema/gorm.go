@@ -56,7 +56,7 @@ func (l *Loader) Load(models ...any) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := db.Migrator().CreateTable(models...); err != nil {
+	if err := db.AutoMigrate(models...); err != nil {
 		return "", err
 	}
 	s, ok := recordriver.Session("gorm")

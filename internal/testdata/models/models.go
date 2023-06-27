@@ -5,11 +5,14 @@ import "gorm.io/gorm"
 type User struct {
 	gorm.Model
 	Name string
+	Pets []Pet
 }
 
 type Pet struct {
-	ID   uint `gorm:"column:foo"`
-	Name string
+	gorm.Model
+	Name   string
+	User   User
+	UserID uint
 }
 
 type Toy struct {
