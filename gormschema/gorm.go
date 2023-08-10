@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"gorm.io/gorm/schema"
 
 	"ariga.io/atlas-go-sdk/recordriver"
 	"gorm.io/driver/mysql"
@@ -13,13 +14,14 @@ import (
 )
 
 // New returns a new Loader.
-func New(dialect string) *Loader {
-	return &Loader{dialect: dialect}
+func New(dialect string, schema string) *Loader {
+	return &Loader{dialect: dialect, schema: schema}
 }
 
 // Loader is a Loader for gorm schema.
 type Loader struct {
 	dialect string
+	schema  string
 }
 
 func (l *Loader) Load(models ...any) (string, error) {
@@ -52,7 +54,13 @@ func (l *Loader) Load(models ...any) (string, error) {
 	default:
 		return "", fmt.Errorf("unsupported engine: %s", l.dialect)
 	}
-	db, err := gorm.Open(di, &gorm.Config{})
+	var config gorm.Config
+	if l.schema != "" {
+		config.NamingStrategy = schema.NamingStrategy{
+			TablePrefix: l.schema + ".",
+		}
+	}
+	db, err := gorm.Open(di, &config)
 	if err != nil {
 		return "", err
 	}

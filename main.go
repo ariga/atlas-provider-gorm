@@ -39,10 +39,11 @@ func main() {
 
 // LoadCmd is a command to load models
 type LoadCmd struct {
-	Path    string   `help:"path to schema package" required:""`
-	Models  []string `help:"Models to load"`
-	Dialect string   `help:"dialect to use" enum:"mysql,sqlite,postgres" required:""`
-	out     io.Writer
+	Path         string   `help:"path to schema package" required:""`
+	SchemaPrefix string   `help:"schema prefix"`
+	Models       []string `help:"Models to load"`
+	Dialect      string   `help:"dialect to use" enum:"mysql,sqlite,postgres" required:""`
+	out          io.Writer
 }
 
 func (c *LoadCmd) Run() error {
@@ -117,8 +118,9 @@ func filename(pkg string) string {
 }
 
 type Payload struct {
-	Models  []model
-	Dialect string
+	Models       []model
+	Dialect      string
+	SchemaPrefix string
 }
 
 func (p Payload) Imports() []string {
