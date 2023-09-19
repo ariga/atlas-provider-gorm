@@ -13,22 +13,24 @@ import (
 	"gorm.io/gorm"
 )
 
-type Config struct {
-	DisableMigrationForeignKeyConstraint bool
-}
-
 // New returns a new Loader.
-func New(dialect string, config *Config) *Loader {
+func New(dialect string, config ...func(*gorm.Config)) *Loader {
+	gormConfig := &gorm.Config{}
+
+	for _, c := range config {
+		c(gormConfig)
+	}
+
 	return &Loader{
 		dialect: dialect,
-		config:  *config,
+		config:  gormConfig,
 	}
 }
 
 // Loader is a Loader for gorm schema.
 type Loader struct {
 	dialect string
-	config  Config
+	config  *gorm.Config
 }
 
 func (l *Loader) Load(models ...interface{}) (string, error) {
@@ -37,12 +39,7 @@ func (l *Loader) Load(models ...interface{}) (string, error) {
 		return "", err
 	}
 
-	gormConfig := &gorm.Config{}
-	if l.config.DisableMigrationForeignKeyConstraint {
-		gormConfig.DisableForeignKeyConstraintWhenMigrating = true
-	}
-
-	db, err := gorm.Open(di, gormConfig)
+	db, err := gorm.Open(di, l.config)
 	if err != nil {
 		return "", err
 	}
@@ -56,6 +53,12 @@ func (l *Loader) Load(models ...interface{}) (string, error) {
 		return "", errors.New("failed to retrieve recordriver session")
 	}
 	return s.Stmts(), nil
+}
+
+func WithForeignKeyConstraintDisabled() func(*gorm.Config) {
+	return func(c *gorm.Config) {
+		c.DisableForeignKeyConstraintWhenMigrating = true
+	}
 }
 
 func (l *Loader) getDialector() (gorm.Dialector, error) {

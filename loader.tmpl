@@ -10,19 +10,32 @@ import (
 	{{- end}}
 	"ariga.io/atlas-provider-gorm/gormschema"
 	_ "ariga.io/atlas-go-sdk/recordriver"
+	"gorm.io/gorm"
 )
 
 func main() {
-	stmts, err := gormschema.New("{{ .Dialect }}", &gormschema.Config{
-		DisableMigrationForeignKeyConstraint: {{ .DisableMigrationForeignKeyConstraint }},
-	}).Load(
+    config := constructGormConfig()
+	stmts, err := gormschema.New("{{ .Dialect }}", config...).Load(
 		{{- range .Models }}
 			&{{ .PkgName }}.{{ .Name }}{},
 		{{- end }}
 	)
+	handleError(err, "failed to load gorm schema")
+
+	io.WriteString(os.Stdout, stmts)
+}
+
+func handleError(err error, message string) {
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to load gorm schema: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s: %v\n", message, err)
 		os.Exit(1)
 	}
-	io.WriteString(os.Stdout, stmts)
+}
+
+func constructGormConfig() (config []func(*gorm.Config)) {
+	if {{ .DisableMigrationForeignKeyConstraint }} {
+		config = append(config, gormschema.WithForeignKeyConstraintDisabled())
+	}
+
+	return
 }

@@ -76,7 +76,7 @@ import (
 )
 
 func main() {
-  stmts, err := gormschema.New("mysql", &gormschema.Config{}).Load(&models.User{}, &models.Pet{})
+  stmts, err := gormschema.New("mysql").Load(&models.User{}, &models.Pet{})
   if err != nil {
     fmt.Fprintf(os.Stderr, "failed to load gorm schema: %v\n", err)
     os.Exit(1)
@@ -144,9 +144,7 @@ import (
 )
 
 func main() {
-  stmts, err := gormschema.New("mysql" &gormschema.config{
-    DisableMigrationForeignKeyConstraint: true,
-  }).Load(&models.User{}, &models.Pet{})
+  stmts, err := gormschema.New("mysql" gormschema.WithForeignKeyConstraintDisabled()).Load(&models.User{}, &models.Pet{})
   if err != nil {
     fmt.Fprintf(os.Stderr, "failed to load gorm schema: %v\n", err)
     os.Exit(1)
