@@ -13,7 +13,9 @@ import (
 )
 
 func main() {
-	stmts, err := gormschema.New("{{ .Dialect }}").Load(
+	stmts, err := gormschema.New("{{ .Dialect }}", &gormschema.Config{
+		DisableMigrationForeignKeyConstraint: {{ .DisableMigrationForeignKeyConstraint }},
+	}).Load(
 		{{- range .Models }}
 			&{{ .PkgName }}.{{ .Name }}{},
 		{{- end }}
