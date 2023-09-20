@@ -143,10 +143,6 @@ The provider supports the following databases:
 * PostgreSQL
 * SQLite
 
-### Issues
-
-Please report any issues or feature requests in the [ariga/atlas](https://github.com/ariga/atlas/issues) repository.
-
 ### License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
