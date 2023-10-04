@@ -55,9 +55,9 @@ func (l *Loader) Load(models ...interface{}) (string, error) {
 	return s.Stmts(), nil
 }
 
-func WithForeignKeyConstraintDisabled() func(*gorm.Config) {
+func WithForeignKeys(b bool) func(*gorm.Config) {
 	return func(c *gorm.Config) {
-		c.DisableForeignKeyConstraintWhenMigrating = true
+		c.DisableForeignKeyConstraintWhenMigrating = !b
 	}
 }
 

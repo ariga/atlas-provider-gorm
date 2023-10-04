@@ -39,11 +39,11 @@ func main() {
 
 // LoadCmd is a command to load models
 type LoadCmd struct {
-	Path                                 string   `help:"path to schema package" required:""`
-	Models                               []string `help:"Models to load"`
-	Dialect                              string   `help:"dialect to use" enum:"mysql,sqlite,postgres" required:""`
-	DisableMigrationForeignKeyConstraint bool     `help:"disables foreign key constraint when migrating"`
-	out                                  io.Writer
+	Path               string   `help:"path to schema package" required:""`
+	Models             []string `help:"Models to load"`
+	Dialect            string   `help:"dialect to use" enum:"mysql,sqlite,postgres" required:""`
+	DisableForeignKeys bool     `help:"disables foreign key constraint"`
+	out                io.Writer
 }
 
 func (c *LoadCmd) Run() error {
@@ -54,9 +54,9 @@ func (c *LoadCmd) Run() error {
 	}
 	models := gatherModels(pkgs)
 	p := Payload{
-		Models:                               models,
-		Dialect:                              c.Dialect,
-		DisableMigrationForeignKeyConstraint: c.DisableMigrationForeignKeyConstraint,
+		Models:             models,
+		Dialect:            c.Dialect,
+		DisableForeignKeys: c.DisableForeignKeys,
 	}
 	var buf bytes.Buffer
 	if err := loaderTmpl.Execute(&buf, p); err != nil {
@@ -119,9 +119,9 @@ func filename(pkg string) string {
 }
 
 type Payload struct {
-	Models                               []model
-	Dialect                              string
-	DisableMigrationForeignKeyConstraint bool
+	Models             []model
+	Dialect            string
+	DisableForeignKeys bool
 }
 
 func (p Payload) Imports() []string {

@@ -33,8 +33,8 @@ func handleError(err error, message string) {
 }
 
 func constructGormConfig() (config []func(*gorm.Config)) {
-	if {{ .DisableMigrationForeignKeyConstraint }} {
-		config = append(config, gormschema.WithForeignKeyConstraintDisabled())
+	if {{ .DisableForeignKeys }} {
+		config = append(config, gormschema.WithForeignKeys(false))
 	}
 
 	return

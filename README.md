@@ -125,7 +125,7 @@ data "external_schema" "gorm" {
     "load",
     "--path", "./path/to/models",
     "--dialect", "mysql", // | postgres | sqlite
-    "--disable-migration-foreign-key-constraint",
+    "--disable-foreign-keys",
   ]
 }
 ```
@@ -144,7 +144,7 @@ import (
 )
 
 func main() {
-  stmts, err := gormschema.New("mysql" gormschema.WithForeignKeyConstraintDisabled()).Load(&models.User{}, &models.Pet{})
+  stmts, err := gormschema.New("mysql" gormschema.WithForeignKeys(false)).Load(&models.User{}, &models.Pet{})
   if err != nil {
     fmt.Fprintf(os.Stderr, "failed to load gorm schema: %v\n", err)
     os.Exit(1)
