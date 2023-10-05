@@ -110,7 +110,7 @@ env "gorm" {
 
 ### Additional Configuration
 
-To supply custom a custom `gorm.Config{}` object to the provider use the [Go Program Mode](#as-go-file) with
+To supply custom `gorm.Config{}` object to the provider use the [Go Program Mode](#as-go-file) with
 the `WithConfig` option. For example, to disable foreign keys:
 
 ```go
