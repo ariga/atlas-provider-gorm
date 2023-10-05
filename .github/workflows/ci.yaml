@@ -15,7 +15,7 @@ jobs:
       - name: Run Go linters
         uses: golangci/golangci-lint-action@v3
         with:
-          args: --verbose
+          args: --verbose --timeout=5m
           skip-pkg-cache: true
   unit-tests:
     runs-on: ubuntu-latest

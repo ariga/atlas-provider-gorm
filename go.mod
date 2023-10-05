@@ -3,7 +3,7 @@ module ariga.io/atlas-provider-gorm
 go 1.20
 
 require (
-	ariga.io/atlas-go-sdk v0.0.0-20230709063453-1058d6508503
+	ariga.io/atlas-go-sdk v0.1.1-0.20231001054405-7edfcfc14f1c
 	github.com/alecthomas/kong v0.7.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/tools v0.10.0
