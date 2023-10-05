@@ -3,30 +3,26 @@
 Load [GORM](https://gorm.io/) schemas into an [Atlas](https://atlasgo.io) project.
 
 ### Use-cases
-
 1. **Declarative migrations** - use a Terraform-like `atlas schema apply --env gorm` to apply your GORM schema to the database.
 2. **Automatic migration planning** - use `atlas migrate diff --env gorm` to automatically plan a migration from  
-   the current database version to the GORM schema.
+  the current database version to the GORM schema.
 
 ### Installation
 
 Install Atlas from macOS or Linux by running:
-
 ```bash
 curl -sSf https://atlasgo.sh | sh
 ```
-
 See [atlasgo.io](https://atlasgo.io/getting-started#installation) for more installation options.
 
 Install the provider by running:
-
 ```bash
 go get -u ariga.io/atlas-provider-gorm
-```
+``` 
 
-#### Standalone
+#### Standalone 
 
-If all of your GORM models exist in a single package, and either embed `gorm.Model` or contain `gorm` struct tags,
+If all of your GORM models exist in a single package, and either embed `gorm.Model` or contain `gorm` struct tags, 
 you can use the provider directly to load your GORM schema into Atlas.
 
 In your project directory, create a new file named `atlas.hcl` with the following contents:
@@ -72,6 +68,7 @@ import (
   "os"
 
   "ariga.io/atlas-provider-gorm/gormschema"
+  _ "ariga.io/atlas-go-sdk/recordriver"
   "github.com/<yourorg>/<yourrepo>/path/to/models"
 )
 
@@ -111,47 +108,20 @@ env "gorm" {
 }
 ```
 
-### Disabling Foreign Key Constraints
+### Additional Configuration
 
-To disable foreign key constraints in the migrations, you can configure Atlas config or code.
-
-```hcl
-data "external_schema" "gorm" {
-  program = [
-    "go",
-    "run",
-    "-mod=mod",
-    "ariga.io/atlas-provider-gorm",
-    "load",
-    "--path", "./path/to/models",
-    "--dialect", "mysql", // | postgres | sqlite
-    "--disable-foreign-keys",
-  ]
-}
-```
-
-When used as a Go file, use the following code:
+To supply custom `gorm.Config{}` object to the provider use the [Go Program Mode](#as-go-file) with
+the `WithConfig` option. For example, to disable foreign keys:
 
 ```go
-package main
-
-import (
-  "io"
-  "os"
-
-  "ariga.io/atlas-provider-gorm/gormschema"
-  "github.com/<yourorg>/<yourrepo>/path/to/models"
-)
-
-func main() {
-  stmts, err := gormschema.New("mysql" gormschema.WithForeignKeys(false)).Load(&models.User{}, &models.Pet{})
-  if err != nil {
-    fmt.Fprintf(os.Stderr, "failed to load gorm schema: %v\n", err)
-    os.Exit(1)
-  }
-  io.WriteString(os.Stdout, stmts)
-}
+loader := New("sqlite", WithConfig(
+    &gorm.Config{
+        DisableForeignKeyConstraintWhenMigrating: true,
+    },
+))
 ```
+
+For a full list of options, see the [GORM documentation](https://gorm.io/docs/gorm_config.html).
 
 ### Usage
 
@@ -167,28 +137,26 @@ before applying it to the database.
 ```bash
 atlas schema apply --env gorm -u "mysql://root:password@localhost:3306/mydb"
 ```
-
 Where the `-u` flag accepts the [URL](https://atlasgo.io/concepts/url) to the
 target database.
 
 #### Diff
 
-Atlas supports a [version migration](https://atlasgo.io/concepts/declarative-vs-versioned#versioned-migrations)
+Atlas supports a [versioned migration](https://atlasgo.io/concepts/declarative-vs-versioned#versioned-migrations) 
 workflow, where each change to the database is versioned and recorded in a migration file. You can use the
 `atlas migrate diff` command to automatically generate a migration file that will migrate the database
 from its latest revision to the current GORM schema.
 
 ```bash
-atlas migrate diff --env gorm
+atlas migrate diff --env gorm 
 ```
 
 ### Supported Databases
 
 The provider supports the following databases:
-
-- MySQL
-- PostgreSQL
-- SQLite
+* MySQL
+* PostgreSQL
+* SQLite
 
 ### Issues
 

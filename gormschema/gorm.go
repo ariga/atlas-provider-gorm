@@ -3,7 +3,6 @@ package gormschema
 import (
 	"database/sql"
 	"database/sql/driver"
-	"errors"
 	"fmt"
 
 	"ariga.io/atlas-go-sdk/recordriver"
@@ -14,80 +13,72 @@ import (
 )
 
 // New returns a new Loader.
-func New(dialect string, config ...func(*gorm.Config)) *Loader {
-	gormConfig := &gorm.Config{}
-
-	for _, c := range config {
-		c(gormConfig)
+func New(dialect string, opts ...Option) *Loader {
+	l := &Loader{dialect: dialect, config: &gorm.Config{}}
+	for _, opt := range opts {
+		opt(l)
 	}
+	return l
+}
 
-	return &Loader{
-		dialect: dialect,
-		config:  gormConfig,
+type (
+	// Loader is a Loader for gorm schema.
+	Loader struct {
+		dialect string
+		config  *gorm.Config
+	}
+	// Option configures the Loader.
+	Option func(*Loader)
+)
+
+// WithConfig sets the gorm config.
+func WithConfig(cfg *gorm.Config) Option {
+	return func(l *Loader) {
+		l.config = cfg
 	}
 }
 
-// Loader is a Loader for gorm schema.
-type Loader struct {
-	dialect string
-	config  *gorm.Config
-}
-
-func (l *Loader) Load(models ...interface{}) (string, error) {
-	di, err := l.getDialector()
-	if err != nil {
-		return "", err
-	}
-
-	db, err := gorm.Open(di, l.config)
-	if err != nil {
-		return "", err
-	}
-
-	if err := db.AutoMigrate(models...); err != nil {
-		return "", err
-	}
-
-	s, ok := recordriver.Session("gorm")
-	if !ok {
-		return "", errors.New("failed to retrieve recordriver session")
-	}
-	return s.Stmts(), nil
-}
-
-func WithForeignKeys(b bool) func(*gorm.Config) {
-	return func(c *gorm.Config) {
-		c.DisableForeignKeyConstraintWhenMigrating = !b
-	}
-}
-
-func (l *Loader) getDialector() (gorm.Dialector, error) {
+// Load loads the models and returns the DDL statements representing the schema.
+func (l *Loader) Load(models ...any) (string, error) {
+	var di gorm.Dialector
 	switch l.dialect {
 	case "sqlite":
 		rd, err := sql.Open("recordriver", "gorm")
 		if err != nil {
-			return nil, err
+			return "", err
 		}
+		di = sqlite.Dialector{Conn: rd}
 		recordriver.SetResponse("gorm", "select sqlite_version()", &recordriver.Response{
 			Cols: []string{"sqlite_version()"},
 			Data: [][]driver.Value{{"3.30.1"}},
 		})
-		return sqlite.Dialector{Conn: rd}, nil
 	case "mysql":
+		di = mysql.New(mysql.Config{
+			DriverName: "recordriver",
+			DSN:        "gorm",
+		})
 		recordriver.SetResponse("gorm", "SELECT VERSION()", &recordriver.Response{
 			Cols: []string{"VERSION()"},
 			Data: [][]driver.Value{{"8.0.24"}},
 		})
-		return mysql.New(mysql.Config{
-			DriverName: "recordriver",
-			DSN:        "gorm",
-		}), nil
 	case "postgres":
-		return postgres.New(postgres.Config{
+		di = postgres.New(postgres.Config{
 			DriverName: "recordriver",
 			DSN:        "gorm",
-		}), nil
+		})
 	default:
-		return nil, fmt.Errorf("unsupported engine: %s", l.dialect)
+		return "", fmt.Errorf("unsupported engine: %s", l.dialect)
 	}
+	db, err := gorm.Open(di, l.config)
+	if err != nil {
+		return "", err
+	}
+	if err := db.AutoMigrate(models...); err != nil {
+		return "", err
+	}
+	s, ok := recordriver.Session("gorm")
+	if !ok {
+		return "", err
+	}
+	return s.Stmts(), nil
 }
