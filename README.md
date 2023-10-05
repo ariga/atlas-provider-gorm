@@ -108,6 +108,21 @@ env "gorm" {
 }
 ```
 
+### Additional Configuration
+
+To supply custom a custom `gorm.Config{}` object to the provider use the [Go Program Mode](#as-go-file) with
+the `WithConfig` option. For example, to disable foreign keys:
+
+```go
+loader := New("sqlite", WithConfig(
+    &gorm.Config{
+        DisableForeignKeyConstraintWhenMigrating: true,
+    },
+))
+```
+
+For a full list of options, see the [GORM documentation](https://gorm.io/docs/gorm_config.html).
+
 ### Usage
 
 Once you have the provider installed, you can use it to apply your GORM schema to the database:
@@ -127,7 +142,7 @@ target database.
 
 #### Diff
 
-Atlas supports a [version migration](https://atlasgo.io/concepts/declarative-vs-versioned#versioned-migrations) 
+Atlas supports a [versioned migration](https://atlasgo.io/concepts/declarative-vs-versioned#versioned-migrations) 
 workflow, where each change to the database is versioned and recorded in a migration file. You can use the
 `atlas migrate diff` command to automatically generate a migration file that will migrate the database
 from its latest revision to the current GORM schema.

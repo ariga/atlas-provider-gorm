@@ -13,15 +13,32 @@ import (
 )
 
 // New returns a new Loader.
-func New(dialect string) *Loader {
-	return &Loader{dialect: dialect}
+func New(dialect string, opts ...Option) *Loader {
+	l := &Loader{dialect: dialect, config: &gorm.Config{}}
+	for _, opt := range opts {
+		opt(l)
+	}
+	return l
 }
 
-// Loader is a Loader for gorm schema.
-type Loader struct {
-	dialect string
+type (
+	// Loader is a Loader for gorm schema.
+	Loader struct {
+		dialect string
+		config  *gorm.Config
+	}
+	// Option configures the Loader.
+	Option func(*Loader)
+)
+
+// WithConfig sets the gorm config.
+func WithConfig(cfg *gorm.Config) Option {
+	return func(l *Loader) {
+		l.config = cfg
+	}
 }
 
+// Load loads the models and returns the DDL statements representing the schema.
 func (l *Loader) Load(models ...any) (string, error) {
 	var di gorm.Dialector
 	switch l.dialect {
@@ -52,7 +69,7 @@ func (l *Loader) Load(models ...any) (string, error) {
 	default:
 		return "", fmt.Errorf("unsupported engine: %s", l.dialect)
 	}
-	db, err := gorm.Open(di, &gorm.Config{})
+	db, err := gorm.Open(di, l.config)
 	if err != nil {
 		return "", err
 	}
