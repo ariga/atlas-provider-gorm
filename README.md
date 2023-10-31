@@ -54,6 +54,27 @@ env "gorm" {
 }
 ```
 
+##### Pinning Go dependencies
+
+Next, to prevent the Go Modules system from dropping this dependency from our `go.mod` file, let's
+follow its [official recommendation](https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module)
+for tracking dependencies of tools and add a file named `tools.go` with the following contents:
+
+```go title="tools.go"
+//go:build tools
+package main
+
+import _ "ariga.io/atlas-provider-gorm/gormschema"
+```
+Alternatively, you can simply add a blank import to the `models.go` file we created
+above.
+
+Finally, to tidy things up, run:
+
+```text
+go mod tidy
+```
+
 #### As Go File
 
 If you want to use the provider as a Go file, you can use the provider as follows:
