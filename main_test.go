@@ -21,7 +21,8 @@ func TestLoad(t *testing.T) {
 			require.Contains(t, buf.String(), "CREATE TABLE")
 			require.Contains(t, buf.String(), "pets")
 			require.Contains(t, buf.String(), "users")
-			require.NotContains(t, buf.String(), "toys") // Struct without GORM annotations.
+			require.Contains(t, buf.String(), "toys")
+			require.NotContains(t, buf.String(), "houses") // Struct without GORM annotations.
 		})
 	}
 }
