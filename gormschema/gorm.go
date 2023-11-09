@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"ariga.io/atlas-go-sdk/recordriver"
 	"gorm.io/driver/mysql"
@@ -80,5 +82,71 @@ func (l *Loader) Load(models ...any) (string, error) {
 	if !ok {
 		return "", err
 	}
+
+	switch l.dialect {
+	case "sqlite":
+		// To be implemented
+	case "mysql":
+		// To be implemented
+	case "postgres":
+		s.Statements = moveConstraintStatementsLast(s.Statements)
+	default:
+		return "", fmt.Errorf("unsupported engine: %s", l.dialect)
+	}
+
 	return s.Stmts(), nil
+}
+
+// Moves FK contraint statements nested within a CREATE TABLE statement out to the end
+// Works for PostgreSQL only
+func moveConstraintStatementsLast(stmts []string) []string {
+	newStmts := []string{}
+	contraintStmts := []string{}
+
+	// Regex to match CREATE TABLE X before the first bracket (
+	regexPrefix := *regexp.MustCompile(`^[^(]*`)
+	// Regex to match content within the brackets
+	regexRows := *regexp.MustCompile(`\((.*)\)`)
+
+	for _, stmt := range stmts {
+		if !strings.HasPrefix(stmt, "CREATE TABLE") {
+			newStmts = append(newStmts, stmt)
+			continue
+		}
+
+
+		matchedPrefix := regexPrefix.FindAllStringSubmatch(stmt, -1)
+		if len(matchedPrefix) <= 0 && len(matchedPrefix[0]) <= 0 {
+			newStmts = append(newStmts, stmt)
+			continue
+		}
+		prefix := matchedPrefix[0][0]
+		splitPrefix := strings.Split(strings.TrimSpace(prefix), " ")
+		tableName := splitPrefix[len(splitPrefix)-1]
+
+		matchedRows := regexRows.FindAllStringSubmatch(stmt, -1)
+		if len(matchedRows) <= 0 && len(matchedRows[0]) <= 1 {
+			newStmts = append(newStmts, stmt)
+			continue
+		}
+
+		rows := strings.Split(matchedRows[0][1], ",")
+		newStmt := []string{}
+		for _, row := range rows {
+			if !strings.Contains(row, "FOREIGN KEY") {
+				newStmt = append(newStmt, row)
+				continue
+			}
+
+			contraintStmts = append(
+				contraintStmts,
+				fmt.Sprintf("ALTER TABLE %v ADD %v", tableName, row),
+			)
+		}
+
+		newStmtString := prefix + "(" + strings.Join(newStmt[:], ",") + ")"
+		newStmts = append(newStmts, newStmtString)
+	}
+
+	return append(newStmts, contraintStmts...)
 }
