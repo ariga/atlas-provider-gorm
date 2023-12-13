@@ -10,6 +10,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/migrator"
 )
 
 // New returns a new Loader.
@@ -73,12 +74,79 @@ func (l *Loader) Load(models ...any) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := db.AutoMigrate(models...); err != nil {
-		return "", err
+	db.Config.DisableForeignKeyConstraintWhenMigrating = true
+	err = db.AutoMigrate(models...)
+	if !l.config.DisableForeignKeyConstraintWhenMigrating {
+		db, err = gorm.Open(customDialector{
+			Dialector: di,
+		}, l.config)
+		if err != nil {
+			return "", err
+		}
+		cm, ok := db.Migrator().(*customMigrator)
+		if !ok {
+			return "", err
+		}
+		if err = cm.CreateConstraints(models); err != nil {
+			return "", err
+		}
 	}
 	s, ok := recordriver.Session("gorm")
 	if !ok {
-		return "", err
+		return "", fmt.Errorf("gorm db session not found")
 	}
 	return s.Stmts(), nil
+}
+
+type customMigrator struct {
+	migrator.Migrator
+	dialectMigrator gorm.Migrator
+}
+
+type customDialector struct {
+	gorm.Dialector
+}
+
+func (d customDialector) newCustomMigrator(db *gorm.DB) *customMigrator {
+	return &customMigrator{
+		Migrator: migrator.Migrator{
+			Config: migrator.Config{
+				DB:                          db,
+				Dialector:                   d,
+				CreateIndexAfterCreateTable: true,
+			},
+		},
+		dialectMigrator: d.Dialector.Migrator(db),
+	}
+}
+
+func (d customDialector) Migrator(db *gorm.DB) gorm.Migrator {
+	return d.newCustomMigrator(db)
+}
+
+func (m *customMigrator) HasTable(dst interface{}) bool {
+	return true
+}
+
+func (m *customMigrator) CreateConstraints(models []interface{}) error {
+	for _, model := range m.ReorderModels(models, true) {
+		err := m.Migrator.RunWithValue(model, func(stmt *gorm.Statement) error {
+			for _, rel := range stmt.Schema.Relationships.Relations {
+				if rel.Field.IgnoreMigration {
+					continue
+				}
+				if constraint := rel.ParseConstraint(); constraint != nil &&
+					constraint.Schema == stmt.Schema {
+					if err := m.dialectMigrator.CreateConstraint(model, constraint.Name); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

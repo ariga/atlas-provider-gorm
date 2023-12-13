@@ -3,12 +3,13 @@ package gormschema
 import (
 	"testing"
 
+	"ariga.io/atlas-go-sdk/recordriver"
 	"ariga.io/atlas-provider-gorm/internal/testdata/models"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
 
-func TestConfig(t *testing.T) {
+func TestSQLiteConfig(t *testing.T) {
 	l := New("sqlite", WithConfig(
 		&gorm.Config{
 			DisableForeignKeyConstraintWhenMigrating: true,
@@ -18,5 +19,31 @@ func TestConfig(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, sql, "CREATE TABLE `pets`")
 	require.Contains(t, sql, "CREATE TABLE `users`")
+	require.NotContains(t, sql, "FOREIGN KEY")
+}
+
+func TestPostgreSQLConfig(t *testing.T) {
+	l := New("postgres", WithConfig(&gorm.Config{}))
+	sql, err := l.Load(models.Location{}, models.Event{})
+	require.NoError(t, err)
+	require.Contains(t, sql, `CREATE TABLE "events"`)
+	require.Contains(t, sql, `CREATE UNIQUE INDEX IF NOT EXISTS "idx_events_location_id"`)
+	require.Contains(t, sql, `CREATE TABLE "locations"`)
+	require.Contains(t, sql, `CREATE UNIQUE INDEX IF NOT EXISTS "idx_locations_event_id"`)
+	require.Contains(t, sql, `ALTER TABLE "events" ADD CONSTRAINT "fk_locations_event" FOREIGN KEY ("locationId")`)
+	require.Contains(t, sql, `ALTER TABLE "locations" ADD CONSTRAINT "fk_events_location"`)
+	sess, ok := recordriver.Session("gorm")
+	require.True(t, ok)
+	sess.Statements = []string{}
+	l = New("postgres", WithConfig(
+		&gorm.Config{
+			DisableForeignKeyConstraintWhenMigrating: true,
+		},
+	))
+	sql, err = l.Load(models.Location{}, models.Event{})
+	require.NoError(t, err)
+	require.Contains(t, sql, `CREATE TABLE "events"`)
+	require.Contains(t, sql, `CREATE TABLE "locations"`)
+	require.Contains(t, sql, `CREATE UNIQUE INDEX IF NOT EXISTS "idx_locations_event_id"`)
 	require.NotContains(t, sql, "FOREIGN KEY")
 }
