@@ -13,12 +13,7 @@ import (
 )
 
 func main() {
-	stmts, err := gormschema.New(
-	        "{{ .Dialect }}",
-	        {{if .CreateConstraintsAfterTableCreation}}
-	        gormschema.WithCreateConstraintsAfterCreateTable(true),
-	        {{end}}
-	    ).Load(
+	stmts, err := gormschema.New("{{ .Dialect }}").Load(
 		{{- range .Models }}
 			&{{ .PkgName }}.{{ .Name }}{},
 		{{- end }}
