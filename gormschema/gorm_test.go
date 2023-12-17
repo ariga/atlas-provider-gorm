@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"ariga.io/atlas-go-sdk/recordriver"
+	ckModels "ariga.io/atlas-provider-gorm/internal/testdata/circular_fk_models"
 	"ariga.io/atlas-provider-gorm/internal/testdata/models"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -11,7 +12,7 @@ import (
 
 func TestSQLiteConfig(t *testing.T) {
 	l := New("sqlite")
-	sql, err := l.Load(models.Pet{}, models.User{}, models.Event{}, models.Location{})
+	sql, err := l.Load(models.Pet{}, models.User{}, ckModels.Event{}, ckModels.Location{})
 	require.NoError(t, err)
 	require.Contains(t, sql, "CREATE TABLE `pets`")
 	require.Contains(t, sql, "CREATE TABLE `users`")
@@ -49,7 +50,7 @@ func TestPostgreSQLConfig(t *testing.T) {
 	resetSession(t)
 	l = New("postgres",
 		WithCreateConstraintsAfterCreateTable(true))
-	sql, err = l.Load(models.Location{}, models.Event{})
+	sql, err = l.Load(ckModels.Location{}, ckModels.Event{})
 	require.NoError(t, err)
 	require.Contains(t, sql, `CREATE TABLE "events"`)
 	require.Contains(t, sql, `CREATE UNIQUE INDEX IF NOT EXISTS "idx_events_location_id"`)
@@ -62,7 +63,7 @@ func TestPostgreSQLConfig(t *testing.T) {
 		&gorm.Config{
 			DisableForeignKeyConstraintWhenMigrating: true,
 		}))
-	sql, err = l.Load(models.Location{}, models.Event{})
+	sql, err = l.Load(ckModels.Location{}, ckModels.Event{})
 	require.NoError(t, err)
 	require.Contains(t, sql, `CREATE TABLE "events"`)
 	require.Contains(t, sql, `CREATE TABLE "locations"`)
@@ -80,7 +81,7 @@ func TestMySQLConfig(t *testing.T) {
 	resetSession(t)
 	l = New("mysql",
 		WithCreateConstraintsAfterCreateTable(true))
-	sql, err = l.Load(models.Location{}, models.Event{})
+	sql, err = l.Load(ckModels.Location{}, ckModels.Event{})
 	require.NoError(t, err)
 	require.Contains(t, sql, "CREATE TABLE `events`")
 	require.Contains(t, sql, "CREATE TABLE `locations`")
@@ -92,7 +93,7 @@ func TestMySQLConfig(t *testing.T) {
 			DisableForeignKeyConstraintWhenMigrating: true,
 		},
 	))
-	sql, err = l.Load(models.Location{}, models.Event{})
+	sql, err = l.Load(ckModels.Location{}, ckModels.Event{})
 	require.NoError(t, err)
 	require.Contains(t, sql, "CREATE TABLE `events`")
 	require.Contains(t, sql, "CREATE TABLE `locations`")
