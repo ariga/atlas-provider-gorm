@@ -32,7 +32,7 @@ func TestSQLiteConfig(t *testing.T) {
 	require.NotContains(t, sql, "FOREIGN KEY")
 	resetSession(t)
 	l = New("sqlite",
-		WithCreateConstraintsAfterCreateTable(true))
+		WithDeferredFK(true))
 	_, err = l.Load(models.Pet{}, models.User{})
 	// Circular foreign keys are not supported in sqlite
 	require.Errorf(t, err, "invalid DDL")
@@ -49,7 +49,7 @@ func TestPostgreSQLConfig(t *testing.T) {
 	require.Contains(t, sql, `CONSTRAINT "fk_users_pets" FOREIGN KEY ("user_id")`)
 	resetSession(t)
 	l = New("postgres",
-		WithCreateConstraintsAfterCreateTable(true))
+		WithDeferredFK(true))
 	sql, err = l.Load(ckModels.Location{}, ckModels.Event{})
 	require.NoError(t, err)
 	require.Contains(t, sql, `CREATE TABLE "events"`)
@@ -80,7 +80,7 @@ func TestMySQLConfig(t *testing.T) {
 	require.Contains(t, sql, "CONSTRAINT `fk_users_pets` FOREIGN KEY (`user_id`)")
 	resetSession(t)
 	l = New("mysql",
-		WithCreateConstraintsAfterCreateTable(true))
+		WithDeferredFK(true))
 	sql, err = l.Load(ckModels.Location{}, ckModels.Event{})
 	require.NoError(t, err)
 	require.Contains(t, sql, "CREATE TABLE `events`")
