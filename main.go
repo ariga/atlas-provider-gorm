@@ -42,7 +42,7 @@ type LoadCmd struct {
 	Path                                string   `help:"path to schema package" required:""`
 	Models                              []string `help:"Models to load"`
 	Dialect                             string   `help:"dialect to use" enum:"mysql,sqlite,postgres" required:""`
-	CreateConstraintsAfterTableCreation bool     `help:"creates constraints after table creation statements, used to resolve circular dependencies"`
+	CreateConstraintsAfterTableCreation bool     `help:"creates constraints after table creation statements, used to resolve circular dependencies" optional:""`
 	out                                 io.Writer
 }
 
