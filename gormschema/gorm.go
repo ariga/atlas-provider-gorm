@@ -25,8 +25,9 @@ func New(dialect string, opts ...Option) *Loader {
 type (
 	// Loader is a Loader for gorm schema.
 	Loader struct {
-		dialect string
-		config  *gorm.Config
+		dialect                           string
+		createConstraintsAfterCreateTable bool
+		config                            *gorm.Config
 	}
 	// Option configures the Loader.
 	Option func(*Loader)
@@ -36,6 +37,13 @@ type (
 func WithConfig(cfg *gorm.Config) Option {
 	return func(l *Loader) {
 		l.config = cfg
+	}
+}
+
+// WithCreateConstraintsAfterCreateTable sets the createConstraintsAfterCreateTable config.
+func WithCreateConstraintsAfterCreateTable(b bool) Option {
+	return func(l *Loader) {
+		l.createConstraintsAfterCreateTable = b
 	}
 }
 
@@ -74,11 +82,13 @@ func (l *Loader) Load(models ...any) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	db.Config.DisableForeignKeyConstraintWhenMigrating = true
+	if l.createConstraintsAfterCreateTable {
+		db.Config.DisableForeignKeyConstraintWhenMigrating = true
+	}
 	if err = db.AutoMigrate(models...); err != nil {
 		return "", err
 	}
-	if !l.config.DisableForeignKeyConstraintWhenMigrating {
+	if l.createConstraintsAfterCreateTable {
 		db, err = gorm.Open(dialector{
 			Dialector: di,
 		}, l.config)
@@ -110,7 +120,7 @@ type dialector struct {
 }
 
 // Migrator returns a new gorm.Migrator which can be used to automatically create all Constraints
-// on existing tables
+// on existing tables.
 func (d dialector) Migrator(db *gorm.DB) gorm.Migrator {
 	return &migrator{
 		Migrator: gormMig.Migrator{
@@ -123,12 +133,12 @@ func (d dialector) Migrator(db *gorm.DB) gorm.Migrator {
 	}
 }
 
-// HasTable always returns `true`. By returning `true`, gorm.Migrator will try to alter the table to add constraints
+// HasTable always returns `true`. By returning `true`, gorm.Migrator will try to alter the table to add constraints.
 func (m *migrator) HasTable(dst interface{}) bool {
 	return true
 }
 
-// CreateConstraints detects contrains on the given model and creates them using `m.dialectMigrator`
+// CreateConstraints detects constraints on the given model and creates them using `m.dialectMigrator`.
 func (m *migrator) CreateConstraints(models []interface{}) error {
 	for _, model := range m.ReorderModels(models, true) {
 		err := m.Migrator.RunWithValue(model, func(stmt *gorm.Statement) error {

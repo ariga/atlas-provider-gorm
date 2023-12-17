@@ -10,26 +10,46 @@ import (
 )
 
 func TestSQLiteConfig(t *testing.T) {
-	l := New("sqlite", WithConfig(
-		&gorm.Config{
-			DisableForeignKeyConstraintWhenMigrating: true,
-		},
-	))
-	sql, err := l.Load(models.Pet{}, models.User{})
+	l := New("sqlite")
+	sql, err := l.Load(models.Pet{}, models.User{}, models.Event{}, models.Location{})
+	require.NoError(t, err)
+	require.Contains(t, sql, "CREATE TABLE `pets`")
+	require.Contains(t, sql, "CREATE TABLE `users`")
+	require.Contains(t, sql, "CREATE TABLE `events`")
+	require.Contains(t, sql, "CREATE TABLE `locations`")
+	require.Contains(t, sql, "FOREIGN KEY (`eventId`)")
+	require.Contains(t, sql, "FOREIGN KEY (`locationId`)")
+	require.Contains(t, sql, "CONSTRAINT `fk_users_pets` FOREIGN KEY")
+	resetSession(t)
+	l = New("sqlite", WithConfig(&gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+	}))
+	sql, err = l.Load(models.Pet{}, models.User{})
 	require.NoError(t, err)
 	require.Contains(t, sql, "CREATE TABLE `pets`")
 	require.Contains(t, sql, "CREATE TABLE `users`")
 	require.NotContains(t, sql, "FOREIGN KEY")
 	resetSession(t)
-	l = New("sqlite", WithConfig(&gorm.Config{}))
+	l = New("sqlite",
+		WithCreateConstraintsAfterCreateTable(true))
 	sql, err = l.Load(models.Pet{}, models.User{})
 	// Circular foreign keys are not supported in sqlite
 	require.Errorf(t, err, "invalid DDL")
 }
 
 func TestPostgreSQLConfig(t *testing.T) {
-	l := New("postgres", WithConfig(&gorm.Config{}))
-	sql, err := l.Load(models.Location{}, models.Event{})
+	l := New("postgres")
+	sql, err := l.Load(models.User{}, models.Pet{})
+	require.NoError(t, err)
+	require.Contains(t, sql, `CREATE TABLE "users"`)
+	require.Contains(t, sql, `CREATE INDEX IF NOT EXISTS "idx_users_deleted_at"`)
+	require.Contains(t, sql, `CREATE TABLE "pets"`)
+	require.Contains(t, sql, `CREATE INDEX IF NOT EXISTS "idx_pets_deleted_at"`)
+	require.Contains(t, sql, `CONSTRAINT "fk_users_pets" FOREIGN KEY ("user_id")`)
+	resetSession(t)
+	l = New("postgres",
+		WithCreateConstraintsAfterCreateTable(true))
+	sql, err = l.Load(models.Location{}, models.Event{})
 	require.NoError(t, err)
 	require.Contains(t, sql, `CREATE TABLE "events"`)
 	require.Contains(t, sql, `CREATE UNIQUE INDEX IF NOT EXISTS "idx_events_location_id"`)
@@ -41,8 +61,7 @@ func TestPostgreSQLConfig(t *testing.T) {
 	l = New("postgres", WithConfig(
 		&gorm.Config{
 			DisableForeignKeyConstraintWhenMigrating: true,
-		},
-	))
+		}))
 	sql, err = l.Load(models.Location{}, models.Event{})
 	require.NoError(t, err)
 	require.Contains(t, sql, `CREATE TABLE "events"`)
@@ -52,8 +71,16 @@ func TestPostgreSQLConfig(t *testing.T) {
 }
 
 func TestMySQLConfig(t *testing.T) {
-	l := New("mysql", WithConfig(&gorm.Config{}))
-	sql, err := l.Load(models.Location{}, models.Event{})
+	l := New("mysql")
+	sql, err := l.Load(models.User{}, models.Pet{})
+	require.NoError(t, err)
+	require.Contains(t, sql, "CREATE TABLE `users`")
+	require.Contains(t, sql, "CREATE TABLE `pets`")
+	require.Contains(t, sql, "CONSTRAINT `fk_users_pets` FOREIGN KEY (`user_id`)")
+	resetSession(t)
+	l = New("mysql",
+		WithCreateConstraintsAfterCreateTable(true))
+	sql, err = l.Load(models.Location{}, models.Event{})
 	require.NoError(t, err)
 	require.Contains(t, sql, "CREATE TABLE `events`")
 	require.Contains(t, sql, "CREATE TABLE `locations`")
