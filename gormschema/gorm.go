@@ -3,6 +3,7 @@ package gormschema
 import (
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 
 	"ariga.io/atlas-go-sdk/recordriver"
@@ -97,7 +98,7 @@ func (l *Loader) Load(models ...any) (string, error) {
 	}
 	s, ok := recordriver.Session("gorm")
 	if !ok {
-		return "", fmt.Errorf("gorm db session not found")
+		return "", errors.New("gorm db session not found")
 	}
 	return s.Stmts(), nil
 }
