@@ -33,7 +33,7 @@ func TestSQLiteConfig(t *testing.T) {
 	resetSession(t)
 	l = New("sqlite",
 		WithCreateConstraintsAfterCreateTable(true))
-	sql, err = l.Load(models.Pet{}, models.User{})
+	_, err = l.Load(models.Pet{}, models.User{})
 	// Circular foreign keys are not supported in sqlite
 	require.Errorf(t, err, "invalid DDL")
 }
