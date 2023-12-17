@@ -28,6 +28,6 @@ type Location struct {
 
 type Event struct {
 	EventID    string    `gorm:"primaryKey;column:eventId;"`
-	LocationID string    `gorm:"column:locationId;"`
+	LocationID string    `gorm:"uniqueIndex;column:locationId;"`
 	Location   *Location `gorm:"foreignKey:eventId;references:eventId;OnUpdate:CASCADE,OnDelete:CASCADE"`
 }

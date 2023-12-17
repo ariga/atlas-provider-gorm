@@ -10,7 +10,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/migrator"
+	gormMig "gorm.io/gorm/migrator"
 )
 
 // New returns a new Loader.
@@ -75,15 +75,17 @@ func (l *Loader) Load(models ...any) (string, error) {
 		return "", err
 	}
 	db.Config.DisableForeignKeyConstraintWhenMigrating = true
-	err = db.AutoMigrate(models...)
+	if err = db.AutoMigrate(models...); err != nil {
+		return "", err
+	}
 	if !l.config.DisableForeignKeyConstraintWhenMigrating {
-		db, err = gorm.Open(customDialector{
+		db, err = gorm.Open(dialector{
 			Dialector: di,
 		}, l.config)
 		if err != nil {
 			return "", err
 		}
-		cm, ok := db.Migrator().(*customMigrator)
+		cm, ok := db.Migrator().(*migrator)
 		if !ok {
 			return "", err
 		}
@@ -98,37 +100,36 @@ func (l *Loader) Load(models ...any) (string, error) {
 	return s.Stmts(), nil
 }
 
-type customMigrator struct {
-	migrator.Migrator
+type migrator struct {
+	gormMig.Migrator
 	dialectMigrator gorm.Migrator
 }
 
-type customDialector struct {
+type dialector struct {
 	gorm.Dialector
 }
 
-func (d customDialector) newCustomMigrator(db *gorm.DB) *customMigrator {
-	return &customMigrator{
-		Migrator: migrator.Migrator{
-			Config: migrator.Config{
-				DB:                          db,
-				Dialector:                   d,
-				CreateIndexAfterCreateTable: true,
+// Migrator returns a new gorm.Migrator which can be used to automatically create all Constraints
+// on existing tables
+func (d dialector) Migrator(db *gorm.DB) gorm.Migrator {
+	return &migrator{
+		Migrator: gormMig.Migrator{
+			Config: gormMig.Config{
+				DB:        db,
+				Dialector: d,
 			},
 		},
 		dialectMigrator: d.Dialector.Migrator(db),
 	}
 }
 
-func (d customDialector) Migrator(db *gorm.DB) gorm.Migrator {
-	return d.newCustomMigrator(db)
-}
-
-func (m *customMigrator) HasTable(dst interface{}) bool {
+// HasTable always returns `true`. By returning `true`, gorm.Migrator will try to alter the table to add constraints
+func (m *migrator) HasTable(dst interface{}) bool {
 	return true
 }
 
-func (m *customMigrator) CreateConstraints(models []interface{}) error {
+// CreateConstraints detects contrains on the given model and creates them using `m.dialectMigrator`
+func (m *migrator) CreateConstraints(models []interface{}) error {
 	for _, model := range m.ReorderModels(models, true) {
 		err := m.Migrator.RunWithValue(model, func(stmt *gorm.Statement) error {
 			for _, rel := range stmt.Schema.Relationships.Relations {
