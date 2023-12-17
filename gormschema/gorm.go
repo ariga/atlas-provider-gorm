@@ -10,7 +10,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	gormMig "gorm.io/gorm/migrator"
+	gormig "gorm.io/gorm/migrator"
 )
 
 // New returns a new Loader.
@@ -111,7 +111,7 @@ func (l *Loader) Load(models ...any) (string, error) {
 }
 
 type migrator struct {
-	gormMig.Migrator
+	gormig.Migrator
 	dialectMigrator gorm.Migrator
 }
 
@@ -123,8 +123,8 @@ type dialector struct {
 // on existing tables.
 func (d dialector) Migrator(db *gorm.DB) gorm.Migrator {
 	return &migrator{
-		Migrator: gormMig.Migrator{
-			Config: gormMig.Config{
+		Migrator: gormig.Migrator{
+			Config: gormig.Config{
 				DB:        db,
 				Dialector: d,
 			},
