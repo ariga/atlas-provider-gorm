@@ -1,4 +1,4 @@
-package circular_fk_models
+package circularfks
 
 type Location struct {
 	LocationID string `gorm:"primaryKey;column:locationId;"`

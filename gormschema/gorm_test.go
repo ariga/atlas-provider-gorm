@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"ariga.io/atlas-go-sdk/recordriver"
-	ckModels "ariga.io/atlas-provider-gorm/internal/testdata/circular_fk_models"
+	ckmodels "ariga.io/atlas-provider-gorm/internal/testdata/circularfks"
 	"ariga.io/atlas-provider-gorm/internal/testdata/models"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -12,7 +12,7 @@ import (
 
 func TestSQLiteConfig(t *testing.T) {
 	l := New("sqlite")
-	sql, err := l.Load(models.Pet{}, models.User{}, ckModels.Event{}, ckModels.Location{})
+	sql, err := l.Load(models.Pet{}, models.User{}, ckmodels.Event{}, ckmodels.Location{})
 	require.NoError(t, err)
 	require.Contains(t, sql, "CREATE TABLE `pets`")
 	require.Contains(t, sql, "CREATE TABLE `users`")
@@ -35,7 +35,7 @@ func TestSQLiteConfig(t *testing.T) {
 
 func TestPostgreSQLConfig(t *testing.T) {
 	l := New("postgres")
-	sql, err := l.Load(ckModels.Location{}, ckModels.Event{}, models.User{}, models.Pet{})
+	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{})
 	require.NoError(t, err)
 	require.Contains(t, sql, `CREATE TABLE "users"`)
 	require.Contains(t, sql, `CREATE INDEX IF NOT EXISTS "idx_users_deleted_at"`)
@@ -53,7 +53,7 @@ func TestPostgreSQLConfig(t *testing.T) {
 		&gorm.Config{
 			DisableForeignKeyConstraintWhenMigrating: true,
 		}))
-	sql, err = l.Load(ckModels.Location{}, ckModels.Event{})
+	sql, err = l.Load(ckmodels.Location{}, ckmodels.Event{})
 	require.NoError(t, err)
 	require.Contains(t, sql, `CREATE TABLE "events"`)
 	require.Contains(t, sql, `CREATE TABLE "locations"`)
@@ -63,7 +63,7 @@ func TestPostgreSQLConfig(t *testing.T) {
 
 func TestMySQLConfig(t *testing.T) {
 	l := New("mysql")
-	sql, err := l.Load(ckModels.Location{}, ckModels.Event{}, models.User{}, models.Pet{})
+	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{})
 	require.NoError(t, err)
 	require.Contains(t, sql, "CREATE TABLE `users`")
 	require.Contains(t, sql, "CREATE TABLE `pets`")
@@ -78,7 +78,7 @@ func TestMySQLConfig(t *testing.T) {
 			DisableForeignKeyConstraintWhenMigrating: true,
 		},
 	))
-	sql, err = l.Load(ckModels.Location{}, ckModels.Event{})
+	sql, err = l.Load(ckmodels.Location{}, ckmodels.Event{})
 	require.NoError(t, err)
 	require.Contains(t, sql, "CREATE TABLE `events`")
 	require.Contains(t, sql, "CREATE TABLE `locations`")
@@ -88,5 +88,5 @@ func TestMySQLConfig(t *testing.T) {
 func resetSession(t *testing.T) {
 	sess, ok := recordriver.Session("gorm")
 	require.True(t, ok)
-	sess.Statements = []string{}
+	sess.Statements = nil
 }
