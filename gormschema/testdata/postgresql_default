@@ -1,0 +1,11 @@
+CREATE TABLE "events" ("eventId" text,"locationId" varchar(191),PRIMARY KEY ("eventId"));
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_events_location_id" ON "events" ("locationId");
+CREATE TABLE "locations" ("locationId" text,"eventId" varchar(191),PRIMARY KEY ("locationId"));
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_locations_event_id" ON "locations" ("eventId");
+CREATE TABLE "users" ("id" bigserial,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz,"name" text,PRIMARY KEY ("id"));
+CREATE INDEX IF NOT EXISTS "idx_users_deleted_at" ON "users" ("deleted_at");
+CREATE TABLE "pets" ("id" bigserial,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz,"name" text,"user_id" bigint,PRIMARY KEY ("id"));
+CREATE INDEX IF NOT EXISTS "idx_pets_deleted_at" ON "pets" ("deleted_at");
+ALTER TABLE "events" ADD CONSTRAINT "fk_locations_event" FOREIGN KEY ("locationId") REFERENCES "locations"("locationId");
+ALTER TABLE "locations" ADD CONSTRAINT "fk_events_location" FOREIGN KEY ("eventId") REFERENCES "events"("eventId");
+ALTER TABLE "pets" ADD CONSTRAINT "fk_users_pets" FOREIGN KEY ("user_id") REFERENCES "users"("id");
