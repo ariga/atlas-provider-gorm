@@ -25,9 +25,8 @@ func New(dialect string, opts ...Option) *Loader {
 type (
 	// Loader is a Loader for gorm schema.
 	Loader struct {
-		dialect         string
-		deferCreatingFK bool
-		config          *gorm.Config
+		dialect string
+		config  *gorm.Config
 	}
 	// Option configures the Loader.
 	Option func(*Loader)
@@ -37,13 +36,6 @@ type (
 func WithConfig(cfg *gorm.Config) Option {
 	return func(l *Loader) {
 		l.config = cfg
-	}
-}
-
-// WithDeferredFK sets the deferCreatingFK config.
-func WithDeferredFK(b bool) Option {
-	return func(l *Loader) {
-		l.deferCreatingFK = b
 	}
 }
 
@@ -82,13 +74,13 @@ func (l *Loader) Load(models ...any) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if l.deferCreatingFK {
+	if l.dialect != "sqlite" {
 		db.Config.DisableForeignKeyConstraintWhenMigrating = true
 	}
 	if err = db.AutoMigrate(models...); err != nil {
 		return "", err
 	}
-	if l.deferCreatingFK {
+	if !l.config.DisableForeignKeyConstraintWhenMigrating && l.dialect != "sqlite" {
 		db, err = gorm.Open(dialector{
 			Dialector: di,
 		}, l.config)

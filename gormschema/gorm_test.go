@@ -31,27 +31,17 @@ func TestSQLiteConfig(t *testing.T) {
 	require.Contains(t, sql, "CREATE TABLE `users`")
 	require.NotContains(t, sql, "FOREIGN KEY")
 	resetSession(t)
-	l = New("sqlite",
-		WithDeferredFK(true))
-	_, err = l.Load(models.Pet{}, models.User{})
-	// Circular foreign keys are not supported in sqlite
-	require.Errorf(t, err, "invalid DDL")
 }
 
 func TestPostgreSQLConfig(t *testing.T) {
 	l := New("postgres")
-	sql, err := l.Load(models.User{}, models.Pet{})
+	sql, err := l.Load(ckModels.Location{}, ckModels.Event{}, models.User{}, models.Pet{})
 	require.NoError(t, err)
 	require.Contains(t, sql, `CREATE TABLE "users"`)
 	require.Contains(t, sql, `CREATE INDEX IF NOT EXISTS "idx_users_deleted_at"`)
 	require.Contains(t, sql, `CREATE TABLE "pets"`)
 	require.Contains(t, sql, `CREATE INDEX IF NOT EXISTS "idx_pets_deleted_at"`)
 	require.Contains(t, sql, `CONSTRAINT "fk_users_pets" FOREIGN KEY ("user_id")`)
-	resetSession(t)
-	l = New("postgres",
-		WithDeferredFK(true))
-	sql, err = l.Load(ckModels.Location{}, ckModels.Event{})
-	require.NoError(t, err)
 	require.Contains(t, sql, `CREATE TABLE "events"`)
 	require.Contains(t, sql, `CREATE UNIQUE INDEX IF NOT EXISTS "idx_events_location_id"`)
 	require.Contains(t, sql, `CREATE TABLE "locations"`)
@@ -73,16 +63,11 @@ func TestPostgreSQLConfig(t *testing.T) {
 
 func TestMySQLConfig(t *testing.T) {
 	l := New("mysql")
-	sql, err := l.Load(models.User{}, models.Pet{})
+	sql, err := l.Load(ckModels.Location{}, ckModels.Event{}, models.User{}, models.Pet{})
 	require.NoError(t, err)
 	require.Contains(t, sql, "CREATE TABLE `users`")
 	require.Contains(t, sql, "CREATE TABLE `pets`")
 	require.Contains(t, sql, "CONSTRAINT `fk_users_pets` FOREIGN KEY (`user_id`)")
-	resetSession(t)
-	l = New("mysql",
-		WithDeferredFK(true))
-	sql, err = l.Load(ckModels.Location{}, ckModels.Event{})
-	require.NoError(t, err)
 	require.Contains(t, sql, "CREATE TABLE `events`")
 	require.Contains(t, sql, "CREATE TABLE `locations`")
 	require.Contains(t, sql, "ALTER TABLE `events` ADD CONSTRAINT `fk_locations_event`")
