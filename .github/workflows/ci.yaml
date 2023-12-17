@@ -41,6 +41,9 @@ jobs:
       - working-directory: internal/testdata
         run: |
           atlas migrate diff --env gorm --var dialect=${{ matrix.dialect }}
+      - working-directory: internal/testdata/circularfks
+        run: |
+          atlas migrate diff --env gorm --var dialect=${{ matrix.dialect }}
       - name: Verify migrations generated
         run: |
           status=$(git status --porcelain)
