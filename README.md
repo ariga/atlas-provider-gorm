@@ -54,13 +54,6 @@ env "gorm" {
 }
 ```
 
-##### Flags
-The following flags are supported:
-
-* --path - Path to schema package
-* --dialect - Dialect to use (mysql/postgres/sqlite)
-* --create-constraints-after-table-creation - Create table constraints after CREATE TABLE statements. Used to avoid issues with circular foreign keys.
-
 ##### Pinning Go dependencies
 
 Next, to prevent the Go Modules system from dropping this dependency from our `go.mod` file, let's
