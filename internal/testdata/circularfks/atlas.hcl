@@ -6,6 +6,7 @@ locals {
   dev_url = {
     mysql = "docker://mysql/8/dev"
     postgres = "docker://postgres/15"
+    sqlserver = "docker://sqlserver/2022-latest"
     sqlite = "sqlite://file::memory:?cache=shared"
   }[var.dialect]
 }

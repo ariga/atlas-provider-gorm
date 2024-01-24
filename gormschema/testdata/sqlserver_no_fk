@@ -1,0 +1,4 @@
+CREATE TABLE "events" ("eventId" nvarchar(191),"locationId" nvarchar(191),PRIMARY KEY ("eventId"));
+CREATE UNIQUE INDEX "idx_events_location_id" ON "events"("locationId");
+CREATE TABLE "locations" ("locationId" nvarchar(191),"eventId" nvarchar(191),PRIMARY KEY ("locationId"));
+CREATE UNIQUE INDEX "idx_locations_event_id" ON "locations"("eventId");
