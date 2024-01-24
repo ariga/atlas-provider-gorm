@@ -41,7 +41,7 @@ func main() {
 type LoadCmd struct {
 	Path    string   `help:"path to schema package" required:""`
 	Models  []string `help:"Models to load"`
-	Dialect string   `help:"dialect to use" enum:"mysql,sqlite,postgres" required:""`
+	Dialect string   `help:"dialect to use" enum:"mysql,sqlite,postgres,sqlserver" required:""`
 	out     io.Writer
 }
 
