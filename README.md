@@ -57,7 +57,7 @@ env "gorm" {
 ##### Pinning Go dependencies
 
 Next, to prevent the Go Modules system from dropping this dependency from our `go.mod` file, let's
-follow its [official recommendation](https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module)
+follow its [official recommendation](https://go.dev/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module)
 for tracking dependencies of tools and add a file named `tools.go` with the following contents:
 
 ```go title="tools.go"
