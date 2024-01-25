@@ -29,7 +29,7 @@ jobs:
   integration-test:
     strategy:
       matrix:
-        dialect: [mysql, postgres, sqlite]
+        dialect: [mysql, postgres, sqlite, sqlserver]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -37,13 +37,19 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - run: |
-          curl -sSf 'https://atlasgo.sh?test=1' | env ATLAS_DEBUG=true sh
+          curl -sSf 'https://atlasgo.sh?test=1' | sh
+        env:
+          ATLAS_DEBUG: true
       - working-directory: internal/testdata
         run: |
           atlas migrate diff --env gorm --var dialect=${{ matrix.dialect }}
+        env:
+          ATLAS_TOKEN: ${{ secrets.ATLAS_TOKEN }}
       - working-directory: internal/testdata/circularfks
         run: |
           atlas migrate diff --env gorm --var dialect=${{ matrix.dialect }}
+        env:
+          ATLAS_TOKEN: ${{ secrets.ATLAS_TOKEN }}
       - name: Verify migrations generated
         run: |
           status=$(git status --porcelain)

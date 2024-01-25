@@ -1,6 +1,6 @@
 -- Create "events" table
 CREATE TABLE "public"."events" (
-  "eventId" text NOT NULL,
+  "eventId" character varying(191) NOT NULL,
   "locationId" character varying(191) NULL,
   PRIMARY KEY ("eventId")
 );
@@ -8,7 +8,7 @@ CREATE TABLE "public"."events" (
 CREATE UNIQUE INDEX "idx_events_location_id" ON "public"."events" ("locationId");
 -- Create "locations" table
 CREATE TABLE "public"."locations" (
-  "locationId" text NOT NULL,
+  "locationId" character varying(191) NOT NULL,
   "eventId" character varying(191) NULL,
   PRIMARY KEY ("locationId")
 );

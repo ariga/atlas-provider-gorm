@@ -60,6 +60,22 @@ func TestMySQLConfig(t *testing.T) {
 	requireEqualContent(t, sql, "testdata/mysql_no_fk")
 }
 
+func TestSQLServerConfig(t *testing.T) {
+	resetSession()
+	l := New("sqlserver")
+	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{})
+	require.NoError(t, err)
+	requireEqualContent(t, sql, "testdata/sqlserver_default")
+	resetSession()
+	l = New("sqlserver", WithConfig(
+		&gorm.Config{
+			DisableForeignKeyConstraintWhenMigrating: true,
+		}))
+	sql, err = l.Load(ckmodels.Location{}, ckmodels.Event{})
+	require.NoError(t, err)
+	requireEqualContent(t, sql, "testdata/sqlserver_no_fk")
+}
+
 func resetSession() {
 	sess, ok := recordriver.Session("gorm")
 	if ok {

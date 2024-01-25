@@ -10,6 +10,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
+	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	gormig "gorm.io/gorm/migrator"
 )
@@ -65,6 +66,11 @@ func (l *Loader) Load(models ...any) (string, error) {
 		})
 	case "postgres":
 		di = postgres.New(postgres.Config{
+			DriverName: "recordriver",
+			DSN:        "gorm",
+		})
+	case "sqlserver":
+		di = sqlserver.New(sqlserver.Config{
 			DriverName: "recordriver",
 			DSN:        "gorm",
 		})
