@@ -8,11 +8,12 @@ require (
 	ariga.io/atlas-go-sdk v0.2.3
 	github.com/alecthomas/kong v0.7.1
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/tools v0.10.0
+	golang.org/x/tools v0.17.0
 	gorm.io/driver/mysql v1.5.1
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/driver/sqlite v1.5.2
-	gorm.io/gorm v1.25.2-0.20230610234218-206613868439
+	gorm.io/driver/sqlserver v1.5.2
+	gorm.io/gorm v1.25.7
 )
 
 require (
@@ -31,9 +32,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
-	golang.org/x/mod v0.11.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/mod v0.15.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/driver/sqlserver v1.5.2 // indirect
 )

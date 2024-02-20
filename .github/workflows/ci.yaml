@@ -30,12 +30,13 @@ jobs:
     strategy:
       matrix:
         dialect: [mysql, postgres, sqlite, sqlserver]
+        go: ['1.21', '1.22']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
-          go-version-file: 'go.mod'
+          go-version: ${{ matrix.go }}
       - run: |
           curl -sSf 'https://atlasgo.sh?test=1' | sh
         env:
