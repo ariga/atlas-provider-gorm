@@ -6,6 +6,7 @@ import (
 
 	"ariga.io/atlas-go-sdk/recordriver"
 	ckmodels "ariga.io/atlas-provider-gorm/internal/testdata/circularfks"
+	"ariga.io/atlas-provider-gorm/internal/testdata/customjointable"
 	"ariga.io/atlas-provider-gorm/internal/testdata/models"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -58,6 +59,11 @@ func TestMySQLConfig(t *testing.T) {
 	sql, err = l.Load(ckmodels.Location{}, ckmodels.Event{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_no_fk")
+	resetSession()
+	l = New("mysql")
+	sql, err = l.Load(customjointable.Address{}, customjointable.Person{}, customjointable.PersonAddress{})
+	require.NoError(t, err)
+	requireEqualContent(t, sql, "testdata/mysql_custom_join_table")
 }
 
 func TestSQLServerConfig(t *testing.T) {

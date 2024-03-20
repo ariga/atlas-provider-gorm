@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"slices"
 
 	"ariga.io/atlas-go-sdk/recordriver"
 	"gorm.io/driver/mysql"
@@ -133,12 +134,14 @@ func (d dialector) Migrator(db *gorm.DB) gorm.Migrator {
 }
 
 // HasTable always returns `true`. By returning `true`, gorm.Migrator will try to alter the table to add constraints.
-func (m *migrator) HasTable(dst interface{}) bool {
+func (m *migrator) HasTable(dst any) bool {
 	return true
 }
 
 // CreateConstraints detects constraints on the given model and creates them using `m.dialectMigrator`.
-func (m *migrator) CreateConstraints(models []interface{}) error {
+func (m *migrator) CreateConstraints(models []any) error {
+	// Reverse the order of models to ensure many 2 many tables constraints are created first, assuming they are at the end.
+	slices.Reverse(models)
 	for _, model := range m.ReorderModels(models, true) {
 		err := m.Migrator.RunWithValue(model, func(stmt *gorm.Statement) error {
 			for _, rel := range stmt.Schema.Relationships.Relations {
