@@ -180,6 +180,38 @@ The provider supports the following databases:
 * SQLite
 * SQL Server
 
+### Frequently Asked Questions
+
+* **Foreign key constraints not generated correctly** -
+  if you use [Customize JoinTable](https://gorm.io/docs/many_to_many.html#Customize-JoinTable) you need to
+  use the [Go Program Mode](#as-go-file) and pass the joinTable struct as last argument to the `Load` method.
+
+  for example if those are your models:
+  ```go
+  type Person struct {
+    ID        int
+    Name      string
+    Addresses []Address `gorm:"many2many:person_addresses;"`
+  }
+  
+  type Address struct {
+    ID   int
+    Name string
+  }
+  
+  type PersonAddress struct {
+    PersonID  int `gorm:"primaryKey"`
+    AddressID int `gorm:"primaryKey"`
+    CreatedAt time.Time
+    DeletedAt gorm.DeletedAt
+  }
+  ```
+  
+  you should use the following code:
+  ```go
+  stmts, err := gormschema.New("mysql").Load(&models.Person{}, &models.Address{}, &models.PersonAddress{})
+  ```
+
 ### License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
