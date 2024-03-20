@@ -183,7 +183,7 @@ The provider supports the following databases:
 ### Frequently Asked Questions
 
 * **Foreign key constraints not generated correctly** -
-  if you ate using [Customize JoinTable](https://gorm.io/docs/many_to_many.html#Customize-JoinTable) you need to
+  if you are using [Customize JoinTable](https://gorm.io/docs/many_to_many.html#Customize-JoinTable) you need to
   use the provider as [Go Program Mode](#as-go-file) and pass the joinTable model as last argument to the `Load` method.
 
   for example if those are your models:
