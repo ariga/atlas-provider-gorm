@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"sort"
 	"strings"
 	"text/template"
 	"time"
@@ -156,6 +157,10 @@ func gatherModels(pkgs []*packages.Package) []model {
 			}
 		}
 	}
+	// Return models in deterministic order.
+	sort.Slice(models, func(i, j int) bool {
+		return models[i].Name < models[j].Name
+	})
 	return models
 }
 
