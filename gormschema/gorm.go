@@ -5,7 +5,6 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
-	"slices"
 
 	"ariga.io/atlas-go-sdk/recordriver"
 	"gorm.io/driver/mysql"
@@ -28,8 +27,9 @@ func New(dialect string, opts ...Option) *Loader {
 type (
 	// Loader is a Loader for gorm schema.
 	Loader struct {
-		dialect string
-		config  *gorm.Config
+		dialect            string
+		config             *gorm.Config
+		joinTableCallbacks []func(*gorm.DB)
 	}
 	// Option configures the Loader.
 	Option func(*Loader)
@@ -85,6 +85,11 @@ func (l *Loader) Load(models ...any) (string, error) {
 	if l.dialect != "sqlite" {
 		db.Config.DisableForeignKeyConstraintWhenMigrating = true
 	}
+
+	for _, setupJoinTable := range l.joinTableCallbacks {
+		setupJoinTable(db)
+	}
+
 	if err = db.AutoMigrate(models...); err != nil {
 		return "", err
 	}
@@ -140,8 +145,6 @@ func (m *migrator) HasTable(dst any) bool {
 
 // CreateConstraints detects constraints on the given model and creates them using `m.dialectMigrator`.
 func (m *migrator) CreateConstraints(models []any) error {
-	// Reverse the order of models to ensure many 2 many tables constraints are created first, assuming they are at the end.
-	slices.Reverse(models)
 	for _, model := range m.ReorderModels(models, true) {
 		err := m.Migrator.RunWithValue(model, func(stmt *gorm.Statement) error {
 			for _, rel := range stmt.Schema.Relationships.Relations {
@@ -162,4 +165,20 @@ func (m *migrator) CreateConstraints(models []any) error {
 		}
 	}
 	return nil
+}
+
+type SetupJoinTableParams struct {
+	Model     any
+	Field     string
+	JoinTable any
+}
+
+func (l *Loader) WithJoinTables(params ...SetupJoinTableParams) *Loader {
+	for _, p := range params {
+		l.joinTableCallbacks = append(l.joinTableCallbacks, func(db *gorm.DB) {
+			db.SetupJoinTable(p.Model, p.Field, p.JoinTable)
+		})
+	}
+
+	return l
 }
