@@ -89,8 +89,8 @@ func resetSession() {
 	}
 }
 
-func requireEqualContent(t *testing.T, expected, fileName string) {
+func requireEqualContent(t *testing.T, actual, fileName string) {
 	buf, err := os.ReadFile(fileName)
 	require.NoError(t, err)
-	require.Equal(t, expected, string(buf))
+	require.Equal(t, string(buf), actual)
 }
