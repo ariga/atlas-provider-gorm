@@ -60,7 +60,7 @@ func TestMySQLConfig(t *testing.T) {
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_no_fk")
 	resetSession()
-	l = New("mysql")
+	l = New("mysql", WithJoinTable(&customjointable.Person{}, "Addresses", &customjointable.PersonAddress{}))
 	sql, err = l.Load(customjointable.Address{}, customjointable.Person{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_custom_join_table")
