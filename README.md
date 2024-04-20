@@ -184,7 +184,7 @@ The provider supports the following databases:
 
 * **Foreign key constraints not generated correctly** -
   If a [Customize JoinTable](https://gorm.io/docs/many_to_many.html#Customize-JoinTable) is defined in the schema, 
-  you need to use the provider as a [Go Program](#as-go-file) and set it up using the `BeforeAutoMigrate` option.
+  you need to use the provider as a [Go Program](#as-go-file) and set it up using the `WithJoinTable` option.
   
   for example if those are your models:
   ```go
@@ -209,11 +209,11 @@ The provider supports the following databases:
   
   you should use the following code:
   ```go
-  stmts, err := gormschema.New("mysql")
-  .BeforeAutoMigrate( func(db *gorm.DB) {
-		db.SetupJoinTable(&customjointable.Person{}, "Addresses", &customjointable.PersonAddress{})
-	})
-  .Load(&models.Person{}, &models.Address{})
+  stmts, err := gormschema.New("mysql",
+  	gormschema.WithJoinTable(
+  		&Models.Person{}, "Addresses", &Models.PersonAddress{},
+  	),
+  ).Load(&Models.Address{}, &Models.Person{})
   ```
 
 ### License
