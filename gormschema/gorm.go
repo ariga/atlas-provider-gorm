@@ -29,7 +29,7 @@ type (
 	Loader struct {
 		dialect           string
 		config            *gorm.Config
-		beforeAutoMigrate func(*gorm.DB)
+		beforeAutoMigrate []func(*gorm.DB) error
 	}
 	// Option configures the Loader.
 	Option func(*Loader)
@@ -85,11 +85,11 @@ func (l *Loader) Load(models ...any) (string, error) {
 	if l.dialect != "sqlite" {
 		db.Config.DisableForeignKeyConstraintWhenMigrating = true
 	}
-
-	if l.beforeAutoMigrate != nil {
-		l.beforeAutoMigrate(db)
+	for _, cb := range l.beforeAutoMigrate {
+		if err = cb(db); err != nil {
+			return "", err
+		}
 	}
-
 	if err = db.AutoMigrate(models...); err != nil {
 		return "", err
 	}
@@ -167,7 +167,11 @@ func (m *migrator) CreateConstraints(models []any) error {
 	return nil
 }
 
-func (l *Loader) BeforeAutoMigrate(cb func(*gorm.DB)) *Loader {
-	l.beforeAutoMigrate = cb
-	return l
+// WithJoinTable sets up a join table for the given model and field.
+func WithJoinTable(model any, field string, jointable any) Option {
+	return func(l *Loader) {
+		l.beforeAutoMigrate = append(l.beforeAutoMigrate, func(db *gorm.DB) error {
+			return db.SetupJoinTable(model, field, jointable)
+		})
+	}
 }
