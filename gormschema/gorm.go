@@ -5,7 +5,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
-	"sort"
+	"slices"
 
 	"ariga.io/atlas-go-sdk/recordriver"
 	"gorm.io/driver/mysql"
@@ -155,7 +155,7 @@ func (m *migrator) CreateConstraints(models []any) error {
 			}
 			// since Relations is a map, the order of the keys is not guaranteed
 			// so we sort the keys to make the sql output deterministic
-			sort.Strings(relationNames)
+			slices.Sort(relationNames)
 
 			for _, name := range relationNames {
 				rel := stmt.Schema.Relationships.Relations[name]
