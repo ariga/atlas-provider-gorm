@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"sort"
 
 	"ariga.io/atlas-go-sdk/recordriver"
 	"gorm.io/driver/mysql"
@@ -147,7 +148,18 @@ func (m *migrator) HasTable(dst any) bool {
 func (m *migrator) CreateConstraints(models []any) error {
 	for _, model := range m.ReorderModels(models, true) {
 		err := m.Migrator.RunWithValue(model, func(stmt *gorm.Statement) error {
-			for _, rel := range stmt.Schema.Relationships.Relations {
+
+			relationNames := make([]string, 0, len(stmt.Schema.Relationships.Relations))
+			for name := range stmt.Schema.Relationships.Relations {
+				relationNames = append(relationNames, name)
+			}
+			// since Relations is a map, the order of the keys is not guaranteed
+			// so we sort the keys to make the sql output deterministic
+			sort.Strings(relationNames)
+
+			for _, name := range relationNames {
+				rel := stmt.Schema.Relationships.Relations[name]
+
 				if rel.Field.IgnoreMigration {
 					continue
 				}
