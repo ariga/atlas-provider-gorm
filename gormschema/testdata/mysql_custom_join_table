@@ -1,5 +1,5 @@
 CREATE TABLE `addresses` (`id` bigint AUTO_INCREMENT,`name` longtext,PRIMARY KEY (`id`));
 CREATE TABLE `people` (`id` bigint AUTO_INCREMENT,`name` longtext,PRIMARY KEY (`id`));
 CREATE TABLE `person_addresses` (`person_id` bigint,`address_id` bigint,`created_at` datetime(3) NULL,`deleted_at` datetime(3) NULL,PRIMARY KEY (`person_id`,`address_id`));
-ALTER TABLE `person_addresses` ADD CONSTRAINT `fk_person_addresses_person` FOREIGN KEY (`person_id`) REFERENCES `people`(`id`);
 ALTER TABLE `person_addresses` ADD CONSTRAINT `fk_person_addresses_address` FOREIGN KEY (`address_id`) REFERENCES `addresses`(`id`);
+ALTER TABLE `person_addresses` ADD CONSTRAINT `fk_person_addresses_person` FOREIGN KEY (`person_id`) REFERENCES `people`(`id`);

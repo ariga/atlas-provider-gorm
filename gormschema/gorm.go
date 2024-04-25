@@ -28,8 +28,9 @@ func New(dialect string, opts ...Option) *Loader {
 type (
 	// Loader is a Loader for gorm schema.
 	Loader struct {
-		dialect string
-		config  *gorm.Config
+		dialect           string
+		config            *gorm.Config
+		beforeAutoMigrate []func(*gorm.DB) error
 	}
 	// Option configures the Loader.
 	Option func(*Loader)
@@ -84,6 +85,11 @@ func (l *Loader) Load(models ...any) (string, error) {
 	}
 	if l.dialect != "sqlite" {
 		db.Config.DisableForeignKeyConstraintWhenMigrating = true
+	}
+	for _, cb := range l.beforeAutoMigrate {
+		if err = cb(db); err != nil {
+			return "", err
+		}
 	}
 	if err = db.AutoMigrate(models...); err != nil {
 		return "", err
@@ -140,11 +146,20 @@ func (m *migrator) HasTable(dst any) bool {
 
 // CreateConstraints detects constraints on the given model and creates them using `m.dialectMigrator`.
 func (m *migrator) CreateConstraints(models []any) error {
-	// Reverse the order of models to ensure many 2 many tables constraints are created first, assuming they are at the end.
-	slices.Reverse(models)
 	for _, model := range m.ReorderModels(models, true) {
 		err := m.Migrator.RunWithValue(model, func(stmt *gorm.Statement) error {
-			for _, rel := range stmt.Schema.Relationships.Relations {
+
+			relationNames := make([]string, 0, len(stmt.Schema.Relationships.Relations))
+			for name := range stmt.Schema.Relationships.Relations {
+				relationNames = append(relationNames, name)
+			}
+			// since Relations is a map, the order of the keys is not guaranteed
+			// so we sort the keys to make the sql output deterministic
+			slices.Sort(relationNames)
+
+			for _, name := range relationNames {
+				rel := stmt.Schema.Relationships.Relations[name]
+
 				if rel.Field.IgnoreMigration {
 					continue
 				}
@@ -162,4 +177,13 @@ func (m *migrator) CreateConstraints(models []any) error {
 		}
 	}
 	return nil
+}
+
+// WithJoinTable sets up a join table for the given model and field.
+func WithJoinTable(model any, field string, jointable any) Option {
+	return func(l *Loader) {
+		l.beforeAutoMigrate = append(l.beforeAutoMigrate, func(db *gorm.DB) error {
+			return db.SetupJoinTable(model, field, jointable)
+		})
+	}
 }
