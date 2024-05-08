@@ -15,7 +15,7 @@ import (
 
 func TestSQLiteConfig(t *testing.T) {
 	resetSession()
-	l := gormschema.New("sqlite")
+	l := gormschema.New("sqlite", gormschema.WithViews(models.TopPetOwner{}))
 	sql, err := l.Load(models.Pet{}, models.User{}, ckmodels.Event{}, ckmodels.Location{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/sqlite_default")
@@ -31,7 +31,7 @@ func TestSQLiteConfig(t *testing.T) {
 
 func TestPostgreSQLConfig(t *testing.T) {
 	resetSession()
-	l := gormschema.New("postgres")
+	l := gormschema.New("postgres", gormschema.WithViews(models.TopPetOwner{}))
 	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/postgresql_default")
@@ -47,7 +47,7 @@ func TestPostgreSQLConfig(t *testing.T) {
 
 func TestMySQLConfig(t *testing.T) {
 	resetSession()
-	l := gormschema.New("mysql")
+	l := gormschema.New("mysql", gormschema.WithViews(models.TopPetOwner{}))
 	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_default")
@@ -69,7 +69,7 @@ func TestMySQLConfig(t *testing.T) {
 
 func TestSQLServerConfig(t *testing.T) {
 	resetSession()
-	l := gormschema.New("sqlserver")
+	l := gormschema.New("sqlserver", gormschema.WithViews(models.TopPetOwner{}))
 	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/sqlserver_default")
