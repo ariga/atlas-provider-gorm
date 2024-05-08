@@ -5,9 +5,11 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 
 	"ariga.io/atlas-go-sdk/recordriver"
+	"github.com/go-openapi/inflect"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -31,6 +33,7 @@ type (
 		dialect           string
 		config            *gorm.Config
 		beforeAutoMigrate []func(*gorm.DB) error
+		afterAutoMigrate  []func(*gorm.DB) error
 	}
 	// Option configures the Loader.
 	Option func(*Loader)
@@ -93,6 +96,11 @@ func (l *Loader) Load(models ...any) (string, error) {
 	}
 	if err = db.AutoMigrate(models...); err != nil {
 		return "", err
+	}
+	for _, cb := range l.afterAutoMigrate {
+		if err = cb(db); err != nil {
+			return "", err
+		}
 	}
 	if !l.config.DisableForeignKeyConstraintWhenMigrating && l.dialect != "sqlite" {
 		db, err = gorm.Open(dialector{
@@ -186,4 +194,35 @@ func WithJoinTable(model any, field string, jointable any) Option {
 			return db.SetupJoinTable(model, field, jointable)
 		})
 	}
+}
+
+type (
+	view interface {
+		ViewDef(*gorm.DB) gorm.ViewOption
+	}
+)
+
+// WithViews sets up callbacks to create views for the given "view-based" models.
+func WithViews(models ...any) Option {
+	return func(l *Loader) {
+		for _, model := range models {
+			if view, ok := model.(view); ok {
+				l.afterAutoMigrate = append(l.afterAutoMigrate, func(db *gorm.DB) error {
+					viewDef := view.ViewDef(db)
+					return db.Migrator().CreateView(inflect.Underscore(indirect(reflect.TypeOf(model)).Name()), gorm.ViewOption{
+						Replace:     viewDef.Replace,
+						CheckOption: viewDef.CheckOption,
+						Query:       viewDef.Query,
+					})
+				})
+			}
+		}
+	}
+}
+
+func indirect(t reflect.Type) reflect.Type {
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t
 }
