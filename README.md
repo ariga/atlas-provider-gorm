@@ -129,6 +129,33 @@ env "gorm" {
 }
 ```
 
+### Supported Features
+#### View
+To create a view, you can define the `ViewDef` method on a struct:
+
+```go
+type User struct {
+  gorm.Model
+  Name string
+  Age  int
+}
+
+type WorkingAgedUsers struct {}
+
+func (WorkingAgedUsers) ViewDef(db *gorm.DB) gorm.ViewOption {
+	return gorm.ViewOption{
+		Query: db.Table("users").Select("name", "age").Where("age > ?", 18),
+	}
+}
+```
+Then using `WithViews` option to load the view:
+
+```go
+stmts, err := gormschema.New("mysql",
+  gormschema.WithViews(&models.WorkingAgedUsers{}),
+).Load(&models.User{})
+```
+Name of the view will be the struct name with snake_case format. For example, the view name for `WorkingAgedUsers` struct will be `working_aged_users`.
 ### Additional Configuration
 
 To supply custom `gorm.Config{}` object to the provider use the [Go Program Mode](#as-go-file) with
