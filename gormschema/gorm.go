@@ -209,7 +209,7 @@ func WithViews(models ...any) Option {
 			if view, ok := model.(view); ok {
 				l.afterAutoMigrate = append(l.afterAutoMigrate, func(db *gorm.DB) error {
 					viewDef := view.ViewDef(db)
-					return db.Migrator().CreateView(inflect.Underscore(indirect(reflect.TypeOf(model)).Name()), gorm.ViewOption{
+					return db.Migrator().CreateView(inflect.Underscore(indirect(reflect.TypeOf(view)).Name()), gorm.ViewOption{
 						Replace:     viewDef.Replace,
 						CheckOption: viewDef.CheckOption,
 						Query:       viewDef.Query,
