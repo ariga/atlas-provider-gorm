@@ -61,7 +61,10 @@ func TestMySQLConfig(t *testing.T) {
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_no_fk")
 	resetSession()
-	l = gormschema.New("mysql", gormschema.WithJoinTable(&customjointable.Person{}, "Addresses", &customjointable.PersonAddress{}))
+	l = gormschema.New("mysql",
+		gormschema.WithViews(customjointable.TopCrowdedAddresses{}),
+		gormschema.WithJoinTable(&customjointable.Person{}, "Addresses", &customjointable.PersonAddress{}),
+	)
 	sql, err = l.Load(customjointable.Address{}, customjointable.Person{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_custom_join_table")
