@@ -1,10 +1,11 @@
-package gormschema
+package gormschema_test
 
 import (
 	"os"
 	"testing"
 
 	"ariga.io/atlas-go-sdk/recordriver"
+	"ariga.io/atlas-provider-gorm/gormschema"
 	ckmodels "ariga.io/atlas-provider-gorm/internal/testdata/circularfks"
 	"ariga.io/atlas-provider-gorm/internal/testdata/customjointable"
 	"ariga.io/atlas-provider-gorm/internal/testdata/models"
@@ -14,12 +15,12 @@ import (
 
 func TestSQLiteConfig(t *testing.T) {
 	resetSession()
-	l := New("sqlite")
+	l := gormschema.New("sqlite")
 	sql, err := l.Load(models.Pet{}, models.User{}, ckmodels.Event{}, ckmodels.Location{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/sqlite_default")
 	resetSession()
-	l = New("sqlite", WithConfig(&gorm.Config{
+	l = gormschema.New("sqlite", gormschema.WithConfig(&gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 	}))
 	sql, err = l.Load(models.Pet{}, models.User{})
@@ -30,12 +31,12 @@ func TestSQLiteConfig(t *testing.T) {
 
 func TestPostgreSQLConfig(t *testing.T) {
 	resetSession()
-	l := New("postgres")
+	l := gormschema.New("postgres")
 	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/postgresql_default")
 	resetSession()
-	l = New("postgres", WithConfig(
+	l = gormschema.New("postgres", gormschema.WithConfig(
 		&gorm.Config{
 			DisableForeignKeyConstraintWhenMigrating: true,
 		}))
@@ -46,12 +47,12 @@ func TestPostgreSQLConfig(t *testing.T) {
 
 func TestMySQLConfig(t *testing.T) {
 	resetSession()
-	l := New("mysql")
+	l := gormschema.New("mysql")
 	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_default")
 	resetSession()
-	l = New("mysql", WithConfig(
+	l = gormschema.New("mysql", gormschema.WithConfig(
 		&gorm.Config{
 			DisableForeignKeyConstraintWhenMigrating: true,
 		},
@@ -60,7 +61,7 @@ func TestMySQLConfig(t *testing.T) {
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_no_fk")
 	resetSession()
-	l = New("mysql", WithJoinTable(&customjointable.Person{}, "Addresses", &customjointable.PersonAddress{}))
+	l = gormschema.New("mysql", gormschema.WithJoinTable(&customjointable.Person{}, "Addresses", &customjointable.PersonAddress{}))
 	sql, err = l.Load(customjointable.Address{}, customjointable.Person{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_custom_join_table")
@@ -68,12 +69,12 @@ func TestMySQLConfig(t *testing.T) {
 
 func TestSQLServerConfig(t *testing.T) {
 	resetSession()
-	l := New("sqlserver")
+	l := gormschema.New("sqlserver")
 	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/sqlserver_default")
 	resetSession()
-	l = New("sqlserver", WithConfig(
+	l = gormschema.New("sqlserver", gormschema.WithConfig(
 		&gorm.Config{
 			DisableForeignKeyConstraintWhenMigrating: true,
 		}))
