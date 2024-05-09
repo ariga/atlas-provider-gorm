@@ -9,7 +9,6 @@ import (
 	"slices"
 
 	"ariga.io/atlas-go-sdk/recordriver"
-	"github.com/go-openapi/inflect"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -33,7 +32,6 @@ type (
 		dialect           string
 		config            *gorm.Config
 		beforeAutoMigrate []func(*gorm.DB) error
-		afterAutoMigrate  []func(*gorm.DB) error
 	}
 	// Option configures the Loader.
 	Option func(*Loader)
@@ -46,8 +44,30 @@ func WithConfig(cfg *gorm.Config) Option {
 	}
 }
 
+type (
+	viewDefiner interface {
+		ViewDef(*gorm.DB) gorm.ViewOption
+	}
+
+	ViewDef struct {
+		Def string
+	}
+)
+
 // Load loads the models and returns the DDL statements representing the schema.
-func (l *Loader) Load(models ...any) (string, error) {
+func (l *Loader) Load(objs ...any) (string, error) {
+	var (
+		views  []viewDefiner
+		tables []any
+	)
+	for _, obj := range objs {
+		switch view := obj.(type) {
+		case viewDefiner:
+			views = append(views, view)
+		default:
+			tables = append(tables, obj)
+		}
+	}
 	var di gorm.Dialector
 	switch l.dialect {
 	case "sqlite":
@@ -94,26 +114,24 @@ func (l *Loader) Load(models ...any) (string, error) {
 			return "", err
 		}
 	}
-	if err = db.AutoMigrate(models...); err != nil {
+	if err = db.AutoMigrate(tables...); err != nil {
 		return "", err
 	}
-	for _, cb := range l.afterAutoMigrate {
-		if err = cb(db); err != nil {
-			return "", err
-		}
+	db, err = gorm.Open(dialector{
+		Dialector: di,
+	}, l.config)
+	if err != nil {
+		return "", err
+	}
+	cm, ok := db.Migrator().(*migrator)
+	if !ok {
+		return "", fmt.Errorf("unexpected migrator type: %T", db.Migrator())
+	}
+	if err = cm.CreateViews(views); err != nil {
+		return "", err
 	}
 	if !l.config.DisableForeignKeyConstraintWhenMigrating && l.dialect != "sqlite" {
-		db, err = gorm.Open(dialector{
-			Dialector: di,
-		}, l.config)
-		if err != nil {
-			return "", err
-		}
-		cm, ok := db.Migrator().(*migrator)
-		if !ok {
-			return "", err
-		}
-		if err = cm.CreateConstraints(models); err != nil {
+		if err = cm.CreateConstraints(tables); err != nil {
 			return "", err
 		}
 	}
@@ -133,8 +151,8 @@ type dialector struct {
 	gorm.Dialector
 }
 
-// Migrator returns a new gorm.Migrator which can be used to automatically create all Constraints
-// on existing tables.
+// Migrator returns a new gorm.Migrator, which can be used to extend the default migrator,
+// helping to create constraints and views ...
 func (d dialector) Migrator(db *gorm.DB) gorm.Migrator {
 	return &migrator{
 		Migrator: gormig.Migrator{
@@ -187,36 +205,33 @@ func (m *migrator) CreateConstraints(models []any) error {
 	return nil
 }
 
+// CreateViews creates the given "view-based" models
+func (m *migrator) CreateViews(views []viewDefiner) error {
+	for _, view := range views {
+		viewDef := view.ViewDef(m.DB)
+		viewName := m.DB.Config.NamingStrategy.TableName(indirect(reflect.TypeOf(view)).Name())
+		if namer, ok := view.(interface {
+			TableName() string
+		}); ok {
+			viewName = namer.TableName()
+		}
+		if err := m.DB.Migrator().CreateView(viewName, gorm.ViewOption{
+			Replace:     viewDef.Replace,
+			CheckOption: viewDef.CheckOption,
+			Query:       viewDef.Query,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // WithJoinTable sets up a join table for the given model and field.
 func WithJoinTable(model any, field string, jointable any) Option {
 	return func(l *Loader) {
 		l.beforeAutoMigrate = append(l.beforeAutoMigrate, func(db *gorm.DB) error {
 			return db.SetupJoinTable(model, field, jointable)
 		})
-	}
-}
-
-type (
-	view interface {
-		ViewDef(*gorm.DB) gorm.ViewOption
-	}
-)
-
-// WithViews sets up callbacks to create views for the given "view-based" models.
-func WithViews(models ...any) Option {
-	return func(l *Loader) {
-		for _, model := range models {
-			if view, ok := model.(view); ok {
-				l.afterAutoMigrate = append(l.afterAutoMigrate, func(db *gorm.DB) error {
-					viewDef := view.ViewDef(db)
-					return db.Migrator().CreateView(inflect.Underscore(indirect(reflect.TypeOf(view)).Name()), gorm.ViewOption{
-						Replace:     viewDef.Replace,
-						CheckOption: viewDef.CheckOption,
-						Query:       viewDef.Query,
-					})
-				})
-			}
-		}
 	}
 }
 

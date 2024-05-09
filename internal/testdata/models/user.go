@@ -10,7 +10,14 @@ type User struct {
 	Pets []Pet
 }
 
-type TopPetOwner struct{}
+type TopPetOwner struct {
+	ID       uint
+	PetCount int
+}
+
+func (TopPetOwner) TableName() string {
+	return "top_pet_owner_custom_name"
+}
 
 func (TopPetOwner) ViewDef(db *gorm.DB) gorm.ViewOption {
 	return gorm.ViewOption{

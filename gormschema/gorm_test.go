@@ -15,8 +15,8 @@ import (
 
 func TestSQLiteConfig(t *testing.T) {
 	resetSession()
-	l := gormschema.New("sqlite", gormschema.WithViews(models.TopPetOwner{}))
-	sql, err := l.Load(models.Pet{}, models.User{}, ckmodels.Event{}, ckmodels.Location{})
+	l := gormschema.New("sqlite")
+	sql, err := l.Load(models.Pet{}, models.User{}, ckmodels.Event{}, ckmodels.Location{}, models.TopPetOwner{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/sqlite_default")
 	resetSession()
@@ -31,8 +31,8 @@ func TestSQLiteConfig(t *testing.T) {
 
 func TestPostgreSQLConfig(t *testing.T) {
 	resetSession()
-	l := gormschema.New("postgres", gormschema.WithViews(models.TopPetOwner{}))
-	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{})
+	l := gormschema.New("postgres")
+	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{}, models.TopPetOwner{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/postgresql_default")
 	resetSession()
@@ -47,8 +47,8 @@ func TestPostgreSQLConfig(t *testing.T) {
 
 func TestMySQLConfig(t *testing.T) {
 	resetSession()
-	l := gormschema.New("mysql", gormschema.WithViews(models.TopPetOwner{}))
-	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{})
+	l := gormschema.New("mysql")
+	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{}, models.TopPetOwner{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_default")
 	resetSession()
@@ -61,19 +61,16 @@ func TestMySQLConfig(t *testing.T) {
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_no_fk")
 	resetSession()
-	l = gormschema.New("mysql",
-		gormschema.WithViews(customjointable.TopCrowdedAddresses{}),
-		gormschema.WithJoinTable(&customjointable.Person{}, "Addresses", &customjointable.PersonAddress{}),
-	)
-	sql, err = l.Load(customjointable.Address{}, customjointable.Person{})
+	l = gormschema.New("mysql", gormschema.WithJoinTable(&customjointable.Person{}, "Addresses", &customjointable.PersonAddress{}))
+	sql, err = l.Load(customjointable.Address{}, customjointable.Person{}, customjointable.TopCrowdedAddresses{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_custom_join_table")
 }
 
 func TestSQLServerConfig(t *testing.T) {
 	resetSession()
-	l := gormschema.New("sqlserver", gormschema.WithViews(models.TopPetOwner{}))
-	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{})
+	l := gormschema.New("sqlserver")
+	sql, err := l.Load(ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{}, models.TopPetOwner{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/sqlserver_default")
 	resetSession()
