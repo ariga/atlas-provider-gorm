@@ -140,7 +140,10 @@ type User struct {
   Age  int
 }
 
-type WorkingAgedUsers struct {}
+type WorkingAgedUsers struct {
+  Name string
+  Age  int
+}
 
 func (WorkingAgedUsers) ViewDef(db *gorm.DB) gorm.ViewOption {
 	return gorm.ViewOption{
@@ -148,14 +151,23 @@ func (WorkingAgedUsers) ViewDef(db *gorm.DB) gorm.ViewOption {
 	}
 }
 ```
-Then using `WithViews` option to load the view:
+Then load the view just like a regular model:
 
 ```go
-stmts, err := gormschema.New("mysql",
-  gormschema.WithViews(&models.WorkingAgedUsers{}),
-).Load(&models.User{})
+stmts, err := gormschema.New("mysql").Load(&models.WorkingAgedUsers{}, &models.User{})
 ```
-Name of the view will be the struct name with snake_case format. For example, the view name for `WorkingAgedUsers` struct will be `working_aged_users`.
+The "view-based" model struct works just like a regular model struct, you can use it in your GORM queries.
+```go
+var users []models.WorkingAgedUsers
+db.Find(&users)
+```
+The view's name will adhere to the GORM convention, which is the pluralized struct name, but could be customized using TableName() method:
+```go
+func (WorkingAgedUsers) TableName() string {
+  return "working_aged_users_custom_name"
+}
+```
+*Note: The view feature is only available for logged-in users, run `atlas login` if you haven't already. To learn more about logged-in features for Atlas, visit [Feature Availability](https://atlasgo.io/features#database-features).
 ### Additional Configuration
 
 To supply custom `gorm.Config{}` object to the provider use the [Go Program Mode](#as-go-file) with
