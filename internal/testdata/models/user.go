@@ -7,6 +7,7 @@ import (
 type User struct {
 	gorm.Model
 	Name string
+	Age  int
 	Pets []Pet
 }
 
@@ -28,5 +29,16 @@ func (TopPetOwner) ViewDef(db *gorm.DB) gorm.ViewOption {
 			Group("users.id").
 			Order("pet_count desc").
 			Limit(5),
+	}
+}
+
+type WorkingAgedUsers struct {
+	Name string
+	Age  int
+}
+
+func (WorkingAgedUsers) ViewDef(db *gorm.DB) gorm.ViewOption {
+	return gorm.ViewOption{
+		Query: db.Table("users").Select("name", "age").Where("age > ?", 18),
 	}
 }
