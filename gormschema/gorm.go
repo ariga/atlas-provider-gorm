@@ -117,9 +117,7 @@ func (l *Loader) Load(objs ...any) (string, error) {
 	if err = db.AutoMigrate(tables...); err != nil {
 		return "", err
 	}
-	db, err = gorm.Open(dialector{
-		Dialector: di,
-	}, l.config)
+	db, err = gorm.Open(dialector{Dialector: di}, l.config)
 	if err != nil {
 		return "", err
 	}
@@ -208,13 +206,13 @@ func (m *migrator) CreateConstraints(models []any) error {
 // CreateViews creates the given "view-based" models
 func (m *migrator) CreateViews(views []viewDefiner) error {
 	for _, view := range views {
-		viewDef := view.ViewDef(m.DB)
 		viewName := m.DB.Config.NamingStrategy.TableName(indirect(reflect.TypeOf(view)).Name())
 		if namer, ok := view.(interface {
 			TableName() string
 		}); ok {
 			viewName = namer.TableName()
 		}
+		viewDef := view.ViewDef(m.DB)
 		if err := m.DB.Migrator().CreateView(viewName, gorm.ViewOption{
 			Replace:     viewDef.Replace,
 			CheckOption: viewDef.CheckOption,
