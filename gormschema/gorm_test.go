@@ -16,7 +16,7 @@ import (
 func TestSQLiteConfig(t *testing.T) {
 	resetSession()
 	l := gormschema.New("sqlite")
-	sql, err := l.Load(models.WorkingAgedUsers{}, models.Pet{}, models.User{}, ckmodels.Event{}, ckmodels.Location{}, models.TopPetOwner{})
+	sql, err := l.Load(models.WorkingAgedUsers{}, models.Pet{}, models.User{}, ckmodels.Event{}, ckmodels.Location{}, models.BotlTracker{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/sqlite_default")
 	resetSession()
@@ -32,7 +32,7 @@ func TestSQLiteConfig(t *testing.T) {
 func TestPostgreSQLConfig(t *testing.T) {
 	resetSession()
 	l := gormschema.New("postgres")
-	sql, err := l.Load(models.WorkingAgedUsers{}, ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{}, models.TopPetOwner{})
+	sql, err := l.Load(models.WorkingAgedUsers{}, ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{}, models.BotlTracker{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/postgresql_default")
 	resetSession()
@@ -48,7 +48,7 @@ func TestPostgreSQLConfig(t *testing.T) {
 func TestMySQLConfig(t *testing.T) {
 	resetSession()
 	l := gormschema.New("mysql")
-	sql, err := l.Load(models.WorkingAgedUsers{}, ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{}, models.TopPetOwner{})
+	sql, err := l.Load(models.WorkingAgedUsers{}, ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{}, models.BotlTracker{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_default")
 	resetSession()
@@ -70,7 +70,7 @@ func TestMySQLConfig(t *testing.T) {
 func TestSQLServerConfig(t *testing.T) {
 	resetSession()
 	l := gormschema.New("sqlserver")
-	sql, err := l.Load(models.WorkingAgedUsers{}, ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{}, models.TopPetOwner{})
+	sql, err := l.Load(models.WorkingAgedUsers{}, ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{}, models.BotlTracker{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/sqlserver_default")
 	resetSession()

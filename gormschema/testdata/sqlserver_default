@@ -6,8 +6,8 @@ CREATE TABLE "users" ("id" bigint IDENTITY(1,1),"created_at" datetimeoffset,"upd
 CREATE INDEX "idx_users_deleted_at" ON "users"("deleted_at");
 CREATE TABLE "pets" ("id" bigint IDENTITY(1,1),"created_at" datetimeoffset,"updated_at" datetimeoffset,"deleted_at" datetimeoffset,"name" nvarchar(MAX),"user_id" bigint,PRIMARY KEY ("id"));
 CREATE INDEX "idx_pets_deleted_at" ON "pets"("deleted_at");
-CREATE VIEW "working_aged_users" AS SELECT name,age FROM "users" WHERE age > 18;
-CREATE VIEW "top_pet_owner_custom_name" AS SELECT users.id, count(pets.id) as pet_count FROM "users" left join pets on pets.user_id = users.id GROUP BY "users"."id" ORDER BY pet_count desc OFFSET 0 ROW FETCH NEXT 5 ROWS ONLY;
+CREATE VIEW "working_aged_users" AS SELECT name, age FROM users WHERE age BETWEEN 18 AND 65;
+CREATE VIEW "botl_tracker_custom_name" AS SELECT id, name FROM pets WHERE name LIKE 'botl%';
 ALTER TABLE "events" ADD CONSTRAINT "fk_locations_event" FOREIGN KEY ("locationId") REFERENCES "locations"("locationId");
 ALTER TABLE "locations" ADD CONSTRAINT "fk_events_location" FOREIGN KEY ("eventId") REFERENCES "events"("eventId");
 ALTER TABLE "pets" ADD CONSTRAINT "fk_users_pets" FOREIGN KEY ("user_id") REFERENCES "users"("id");
