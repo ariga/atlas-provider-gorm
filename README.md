@@ -141,13 +141,13 @@ type User struct {
 }
 
 type WorkingAgedUsers struct {
-  Name string
-  Age  int
+	Name string
+	Age  int
 }
 
-func (WorkingAgedUsers) ViewDef(db *gorm.DB) gorm.ViewOption {
-	return gorm.ViewOption{
-		Query: db.Table("users").Select("name", "age").Where("age > ?", 18),
+func (WorkingAgedUsers) ViewDef() gormschema.ViewDef {
+	return gormschema.ViewDef{
+		Def: "SELECT name, age FROM users WHERE age BETWEEN 18 AND 65",
 	}
 }
 ```
