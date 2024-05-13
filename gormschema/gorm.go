@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"strings"
 
 	"ariga.io/atlas-go-sdk/recordriver"
 	"gorm.io/driver/mysql"
@@ -46,9 +47,8 @@ func WithConfig(cfg *gorm.Config) Option {
 
 type (
 	viewDefiner interface {
-		ViewDef(*gorm.DB) gorm.ViewOption
+		ViewDef() ViewDef
 	}
-
 	ViewDef struct {
 		Def string
 	}
@@ -212,12 +212,13 @@ func (m *migrator) CreateViews(views []viewDefiner) error {
 		}); ok {
 			viewName = namer.TableName()
 		}
-		viewDef := view.ViewDef(m.DB)
-		if err := m.DB.Migrator().CreateView(viewName, gorm.ViewOption{
-			Replace:     viewDef.Replace,
-			CheckOption: viewDef.CheckOption,
-			Query:       viewDef.Query,
-		}); err != nil {
+		viewDef := view.ViewDef()
+		createViewSQL := new(strings.Builder)
+		createViewSQL.WriteString("CREATE VIEW ")
+		m.QuoteTo(createViewSQL, viewName)
+		createViewSQL.WriteString(" AS ")
+		createViewSQL.WriteString(viewDef.Def)
+		if err := m.DB.Exec(createViewSQL.String()).Error; err != nil {
 			return err
 		}
 	}

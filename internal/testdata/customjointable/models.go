@@ -3,6 +3,7 @@ package customjointable
 import (
 	"time"
 
+	"ariga.io/atlas-provider-gorm/gormschema"
 	"gorm.io/gorm"
 )
 
@@ -26,14 +27,8 @@ type PersonAddress struct {
 
 type TopCrowdedAddresses struct{}
 
-func (TopCrowdedAddresses) ViewDef(db *gorm.DB) gorm.ViewOption {
-	return gorm.ViewOption{
-		Query: db.
-			Table("addresses").
-			Select("addresses.id, addresses.name, count(person_addresses.person_id) as person_count").
-			Joins("left join person_addresses on person_addresses.address_id = addresses.id").
-			Group("addresses.id").
-			Order("person_count desc").
-			Limit(10),
+func (TopCrowdedAddresses) ViewDef() gormschema.ViewDef {
+	return gormschema.ViewDef{
+		Def: "SELECT address_id, COUNT(person_id) AS count FROM person_addresses GROUP BY address_id ORDER BY count DESC LIMIT 10",
 	}
 }
