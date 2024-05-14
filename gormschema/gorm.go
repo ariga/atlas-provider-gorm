@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
-	"strings"
 
 	"ariga.io/atlas-go-sdk/recordriver"
 	"gorm.io/driver/mysql"
@@ -44,15 +43,6 @@ func WithConfig(cfg *gorm.Config) Option {
 		l.config = cfg
 	}
 }
-
-type (
-	viewDefiner interface {
-		ViewDef() ViewDef
-	}
-	ViewDef struct {
-		Def string
-	}
-)
 
 // Load loads the models and returns the DDL statements representing the schema.
 func (l *Loader) Load(objs ...any) (string, error) {
@@ -205,6 +195,7 @@ func (m *migrator) CreateConstraints(models []any) error {
 
 // CreateViews creates the given "view-based" models
 func (m *migrator) CreateViews(views []viewDefiner) error {
+	viewBuilder := &viewBuilder{db: m.DB}
 	for _, view := range views {
 		viewName := m.DB.Config.NamingStrategy.TableName(indirect(reflect.TypeOf(view)).Name())
 		if namer, ok := view.(interface {
@@ -212,13 +203,11 @@ func (m *migrator) CreateViews(views []viewDefiner) error {
 		}); ok {
 			viewName = namer.TableName()
 		}
-		viewDef := view.ViewDef()
-		createViewSQL := new(strings.Builder)
-		createViewSQL.WriteString("CREATE VIEW ")
-		m.QuoteTo(createViewSQL, viewName)
-		createViewSQL.WriteString(" AS ")
-		createViewSQL.WriteString(viewDef.Def)
-		if err := m.DB.Exec(createViewSQL.String()).Error; err != nil {
+		viewBuilder.viewName = viewName
+		for _, opt := range view.ViewDef() {
+			opt.apply(viewBuilder)
+		}
+		if err := m.DB.Exec(viewBuilder.createStmt).Error; err != nil {
 			return err
 		}
 	}
@@ -239,4 +228,48 @@ func indirect(t reflect.Type) reflect.Type {
 		t = t.Elem()
 	}
 	return t
+}
+
+type (
+	// ViewOption is a configuration option for creating a viewBuilder.
+	ViewOption interface {
+		apply(*viewBuilder)
+	}
+	// ViewOptionFunc is an adapter to allow the use of functions as ViewOption.
+	ViewOptionFunc func(*viewBuilder)
+	viewDefiner    interface {
+		ViewDef() []ViewOption
+	}
+	viewBuilder struct {
+		db         *gorm.DB
+		createStmt string
+		// viewName is only used for the BuildStmt option.
+		// BuildStmt returns only a subquery; viewName helps to create a full CREATE VIEW statement.
+		// viewName is set by model.TableName()
+		viewName string
+	}
+)
+
+// CreateStmt accepts raw SQL with values to create a CREATE VIEW statement.
+func CreateStmt(sql string, values ...interface{}) ViewOptionFunc {
+	return func(vb *viewBuilder) {
+		vb.createStmt = vb.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			return tx.Exec(sql, values...)
+		})
+	}
+}
+
+// BuildStmt accepts a function with gorm query builder to create a CREATE VIEW statement.
+func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOptionFunc {
+	return func(vb *viewBuilder) {
+		vd := vb.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			// Find(nil) helps to execute the query within the context of ToSQL
+			return fn(tx).Unscoped().Find(nil)
+		})
+		vb.createStmt = fmt.Sprintf("CREATE VIEW %s AS %s", vb.viewName, vd)
+	}
+}
+
+func (vf ViewOptionFunc) apply(vb *viewBuilder) {
+	vf(vb)
 }
