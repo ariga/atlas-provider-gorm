@@ -7,7 +7,6 @@ toolchain go1.21.1
 require (
 	ariga.io/atlas-go-sdk v0.2.3
 	github.com/alecthomas/kong v0.7.1
-	github.com/go-openapi/inflect v0.19.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/tools v0.18.0
 	gorm.io/driver/mysql v1.5.1
