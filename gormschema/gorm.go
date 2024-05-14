@@ -195,7 +195,6 @@ func (m *migrator) CreateConstraints(models []any) error {
 
 // CreateViews creates the given "view-based" models
 func (m *migrator) CreateViews(views []viewDefiner) error {
-	viewBuilder := &viewBuilder{db: m.DB}
 	for _, view := range views {
 		viewName := m.DB.Config.NamingStrategy.TableName(indirect(reflect.TypeOf(view)).Name())
 		if namer, ok := view.(interface {
@@ -203,7 +202,10 @@ func (m *migrator) CreateViews(views []viewDefiner) error {
 		}); ok {
 			viewName = namer.TableName()
 		}
-		viewBuilder.viewName = viewName
+		viewBuilder := &viewBuilder{
+			db:       m.DB,
+			viewName: viewName,
+		}
 		for _, opt := range view.ViewDef() {
 			opt.apply(viewBuilder)
 		}
@@ -249,11 +251,11 @@ type (
 	}
 )
 
-// CreateStmt accepts raw SQL with values to create a CREATE VIEW statement.
-func CreateStmt(sql string, values ...interface{}) ViewOptionFunc {
-	return func(vb *viewBuilder) {
-		vb.createStmt = vb.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
-			return tx.Exec(sql, values...)
+// CreateStmt accepts raw SQL with args to create a CREATE VIEW statement.
+func CreateStmt(sql string, args ...any) ViewOptionFunc {
+	return func(b *viewBuilder) {
+		b.createStmt = b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			return tx.Exec(sql, args...)
 		})
 	}
 }
@@ -261,15 +263,17 @@ func CreateStmt(sql string, values ...interface{}) ViewOptionFunc {
 // BuildStmt accepts a function with gorm query builder to create a CREATE VIEW statement.
 // With this option, the view's name will be the same as the model's table name
 func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOptionFunc {
-	return func(vb *viewBuilder) {
-		vd := vb.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+	return func(b *viewBuilder) {
+		vd := b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			// Unscoped() helps to remove `where deleted_at is not null` from the query when model has gorm.Model embedded
 			// Find(nil) helps to execute the query within the context of ToSQL
 			return fn(tx).Unscoped().Find(nil)
 		})
-		vb.createStmt = fmt.Sprintf("CREATE VIEW %s AS %s", vb.viewName, vd)
+
+		b.createStmt = fmt.Sprintf("CREATE VIEW %s AS %s", b.viewName, vd)
 	}
 }
 
-func (vf ViewOptionFunc) apply(vb *viewBuilder) {
-	vf(vb)
+func (vf ViewOptionFunc) apply(b *viewBuilder) {
+	vf(b)
 }
