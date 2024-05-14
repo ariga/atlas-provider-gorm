@@ -245,7 +245,6 @@ type (
 		createStmt string
 		// viewName is only used for the BuildStmt option.
 		// BuildStmt returns only a subquery; viewName helps to create a full CREATE VIEW statement.
-		// viewName is set by model.TableName()
 		viewName string
 	}
 )
@@ -260,6 +259,7 @@ func CreateStmt(sql string, values ...interface{}) ViewOptionFunc {
 }
 
 // BuildStmt accepts a function with gorm query builder to create a CREATE VIEW statement.
+// With this option, the view's name will be the same as the model's table name
 func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOptionFunc {
 	return func(vb *viewBuilder) {
 		vd := vb.db.ToSQL(func(tx *gorm.DB) *gorm.DB {

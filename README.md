@@ -140,14 +140,17 @@ type User struct {
   Age  int
 }
 
+// this is our view
 type WorkingAgedUsers struct {
 	Name string
 	Age  int
 }
 
-func (WorkingAgedUsers) ViewDef() gormschema.ViewDef {
-	return gormschema.ViewDef{
-		Def: "SELECT name, age FROM users WHERE age BETWEEN 18 AND 65",
+func (WorkingAgedUsers) ViewDef() []gormschema.ViewOption {
+	return []gormschema.ViewOption{
+		gormschema.BuildStmt(func(db *gorm.DB) *gorm.DB {
+			return db.Model(&User{}).Where("age BETWEEN 18 AND 65").Select("name, age")
+		}),
 	}
 }
 ```
@@ -156,12 +159,26 @@ Then load the view just like a regular model:
 ```go
 stmts, err := gormschema.New("mysql").Load(&models.WorkingAgedUsers{}, &models.User{})
 ```
-The "view-based" model struct works just like a regular model struct, you can use it in your GORM queries.
+If you need to create a complex view definition, you can utilize the `CreateStmt` option to specify a raw CREATE VIEW query, as shown below:
 ```go
-var users []models.WorkingAgedUsers
-db.Find(&users)
+type BotlTracker struct {
+	ID   uint
+	Name string
+}
+
+func (BotlTracker) ViewDef() []gormschema.ViewOption {
+	return []gormschema.ViewOption{
+		gormschema.CreateStmt("CREATE VIEW botl_trackers AS SELECT id, name FROM pets WHERE name LIKE ?", "botl%"),
+	}
+}
+
 ```
-The view's name will adhere to the GORM convention, which is the pluralized struct name, but could be customized using TableName() method:
+The "view-based" model struct works just like a regular model struct; you can use it in your GORM queries. Just make sure the model's table name is the same as the view's name:
+```go
+var botlFamily []models.BotlTracker
+db.Find(&botlFamily)
+```
+The view's name in the case of using the `BuildStmt` option will adhere to the GORM convention, which is the pluralized struct name (in this case, `working_aged_users`), but it could be customized using the `TableName()` method:"
 ```go
 func (WorkingAgedUsers) TableName() string {
   return "working_aged_users_custom_name"
