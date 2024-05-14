@@ -17,8 +17,10 @@ type WorkingAgedUsers struct {
 	Age  int
 }
 
-func (WorkingAgedUsers) ViewDef() gormschema.ViewDef {
-	return gormschema.ViewDef{
-		Def: "SELECT name, age FROM users WHERE age BETWEEN 18 AND 65",
+func (WorkingAgedUsers) ViewDef() []gormschema.ViewOption {
+	return []gormschema.ViewOption{
+		gormschema.BuildStmt(func(db *gorm.DB) *gorm.DB {
+			return db.Model(&User{}).Where("age BETWEEN 18 AND 65").Select("name, age")
+		}),
 	}
 }

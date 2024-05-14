@@ -2,8 +2,8 @@ CREATE TABLE `events` (`eventId` varchar(191),`locationId` varchar(191),PRIMARY 
 CREATE TABLE `locations` (`locationId` varchar(191),`eventId` varchar(191),PRIMARY KEY (`locationId`),UNIQUE INDEX `idx_locations_event_id` (`eventId`));
 CREATE TABLE `users` (`id` bigint unsigned AUTO_INCREMENT,`created_at` datetime(3) NULL,`updated_at` datetime(3) NULL,`deleted_at` datetime(3) NULL,`name` longtext,`age` bigint,PRIMARY KEY (`id`),INDEX `idx_users_deleted_at` (`deleted_at`));
 CREATE TABLE `pets` (`id` bigint unsigned AUTO_INCREMENT,`created_at` datetime(3) NULL,`updated_at` datetime(3) NULL,`deleted_at` datetime(3) NULL,`name` longtext,`user_id` bigint unsigned,PRIMARY KEY (`id`),INDEX `idx_pets_deleted_at` (`deleted_at`));
-CREATE VIEW `working_aged_users` AS SELECT name, age FROM users WHERE age BETWEEN 18 AND 65;
-CREATE VIEW `botl_tracker_custom_name` AS SELECT id, name FROM pets WHERE name LIKE 'botl%';
+CREATE VIEW working_aged_users AS SELECT name, age FROM `users` WHERE age BETWEEN 18 AND 65;
+CREATE VIEW botl_tracker_custom_name AS SELECT id, name FROM pets WHERE name LIKE 'botl%';
 ALTER TABLE `events` ADD CONSTRAINT `fk_locations_event` FOREIGN KEY (`locationId`) REFERENCES `locations`(`locationId`);
 ALTER TABLE `locations` ADD CONSTRAINT `fk_events_location` FOREIGN KEY (`eventId`) REFERENCES `events`(`eventId`);
 ALTER TABLE `pets` ADD CONSTRAINT `fk_users_pets` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`);

@@ -21,8 +21,8 @@ func (BotlTracker) TableName() string {
 	return "botl_tracker_custom_name"
 }
 
-func (BotlTracker) ViewDef() gormschema.ViewDef {
-	return gormschema.ViewDef{
-		Def: "SELECT id, name FROM pets WHERE name LIKE 'botl%'",
+func (BotlTracker) ViewDef() []gormschema.ViewOption {
+	return []gormschema.ViewOption{
+		gormschema.CreateStmt("CREATE VIEW botl_tracker_custom_name AS SELECT id, name FROM pets WHERE name LIKE ?", "botl%"),
 	}
 }
