@@ -142,16 +142,16 @@ type User struct {
 
 // this is our view
 type WorkingAgedUsers struct {
-	Name string
-	Age  int
+  Name string
+  Age  int
 }
 
 func (WorkingAgedUsers) ViewDef() []gormschema.ViewOption {
-	return []gormschema.ViewOption{
-		gormschema.BuildStmt(func(db *gorm.DB) *gorm.DB {
-			return db.Model(&User{}).Where("age BETWEEN 18 AND 65").Select("name, age")
-		}),
-	}
+  return []gormschema.ViewOption{
+    gormschema.BuildStmt(func(db *gorm.DB) *gorm.DB {
+      return db.Model(&User{}).Where("age BETWEEN 18 AND 65").Select("name, age")
+    }),
+  }
 }
 ```
 Then load the view just like a regular model:
@@ -162,16 +162,15 @@ stmts, err := gormschema.New("mysql").Load(&models.WorkingAgedUsers{}, &models.U
 If you need to create a complex view definition, you can utilize the `CreateStmt` option to specify a raw CREATE VIEW query, as shown below:
 ```go
 type BotlTracker struct {
-	ID   uint
-	Name string
+  ID   uint
+  Name string
 }
 
 func (BotlTracker) ViewDef() []gormschema.ViewOption {
-	return []gormschema.ViewOption{
-		gormschema.CreateStmt("CREATE VIEW botl_trackers AS SELECT id, name FROM pets WHERE name LIKE ?", "botl%"),
-	}
+  return []gormschema.ViewOption{
+    gormschema.CreateStmt("CREATE VIEW botl_trackers AS SELECT id, name FROM pets WHERE name LIKE ?", "botl%"),
+  }
 }
-
 ```
 The "view-based" model struct works just like a regular model struct; you can use it in your GORM queries. Just make sure the model's table name is the same as the view's name:
 ```go
@@ -266,9 +265,9 @@ The provider supports the following databases:
   you should use the following code:
   ```go
   stmts, err := gormschema.New("mysql",
-  	gormschema.WithJoinTable(
-  		&Models.Person{}, "Addresses", &Models.PersonAddress{},
-  	),
+    gormschema.WithJoinTable(
+      &Models.Person{}, "Addresses", &Models.PersonAddress{},
+    ),
   ).Load(&Models.Address{}, &Models.Person{})
   ```
 
