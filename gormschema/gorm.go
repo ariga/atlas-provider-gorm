@@ -47,12 +47,12 @@ func WithConfig(cfg *gorm.Config) Option {
 // Load loads the models and returns the DDL statements representing the schema.
 func (l *Loader) Load(models ...any) (string, error) {
 	var (
-		views  []viewDefiner
+		views  []ViewDefiner
 		tables []any
 	)
 	for _, obj := range models {
 		switch view := obj.(type) {
-		case viewDefiner:
+		case ViewDefiner:
 			views = append(views, view)
 		default:
 			tables = append(tables, obj)
@@ -194,7 +194,7 @@ func (m *migrator) CreateConstraints(models []any) error {
 }
 
 // CreateViews creates the given "view-based" models
-func (m *migrator) CreateViews(views []viewDefiner) error {
+func (m *migrator) CreateViews(views []ViewDefiner) error {
 	for _, view := range views {
 		viewName := m.DB.Config.NamingStrategy.TableName(indirect(reflect.TypeOf(view)).Name())
 		if namer, ok := view.(interface {
@@ -207,7 +207,7 @@ func (m *migrator) CreateViews(views []viewDefiner) error {
 			viewName: viewName,
 		}
 		for _, opt := range view.ViewDef(m.Dialector.Name()) {
-			opt.apply(viewBuilder)
+			opt(viewBuilder)
 		}
 		if err := m.DB.Exec(viewBuilder.createStmt).Error; err != nil {
 			return err
@@ -235,7 +235,7 @@ func indirect(t reflect.Type) reflect.Type {
 type (
 	// ViewOption configures a viewBuilder.
 	ViewOption  func(*viewBuilder)
-	viewDefiner interface {
+	ViewDefiner interface {
 		ViewDef(driver string) []ViewOption
 	}
 	viewBuilder struct {
@@ -268,8 +268,4 @@ func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOption {
 
 		b.createStmt = fmt.Sprintf("CREATE VIEW %s AS %s", b.viewName, vd)
 	}
-}
-
-func (vf ViewOption) apply(b *viewBuilder) {
-	vf(b)
 }
