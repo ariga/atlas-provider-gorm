@@ -13,17 +13,22 @@ type Pet struct {
 	UserID uint
 }
 
-type BotlTracker struct {
-	ID   uint
-	Name string
+type TopPetOwner struct {
+	Name     string
+	PetCount int
 }
 
-func (BotlTracker) TableName() string {
-	return "botl_tracker_custom_name"
-}
-
-func (BotlTracker) ViewDef() []gormschema.ViewOption {
-	return []gormschema.ViewOption{
-		gormschema.CreateStmt("CREATE VIEW botl_tracker_custom_name AS SELECT id, name FROM pets WHERE name LIKE ?", "botl%"),
+func (TopPetOwner) ViewDef(driver string) []gormschema.ViewOption {
+	var stmt string
+	switch driver {
+	case "mysql":
+		stmt = "CREATE VIEW top_pet_owners AS SELECT user_id, COUNT(id) AS pet_count FROM pets GROUP BY user_id ORDER BY pet_count DESC LIMIT 10"
+	case "postgres":
+		stmt = "CREATE VIEW top_pet_owners AS SELECT user_id, COUNT(id) AS pet_count FROM pets GROUP BY user_id ORDER BY pet_count DESC LIMIT 10"
+	case "sqlite":
+		stmt = "CREATE VIEW top_pet_owners AS SELECT user_id, COUNT(id) AS pet_count FROM pets GROUP BY user_id ORDER BY pet_count DESC LIMIT 10"
+	case "sqlserver":
+		stmt = "CREATE VIEW top_pet_owners AS SELECT user_id, COUNT(id) AS pet_count FROM pets GROUP BY user_id ORDER BY pet_count DESC OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY"
 	}
+	return []gormschema.ViewOption{gormschema.CreateStmt(stmt)}
 }

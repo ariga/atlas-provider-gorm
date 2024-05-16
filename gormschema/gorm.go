@@ -206,7 +206,7 @@ func (m *migrator) CreateViews(views []viewDefiner) error {
 			db:       m.DB,
 			viewName: viewName,
 		}
-		for _, opt := range view.ViewDef() {
+		for _, opt := range view.ViewDef(m.Dialector.Name()) {
 			opt.apply(viewBuilder)
 		}
 		if err := m.DB.Exec(viewBuilder.createStmt).Error; err != nil {
@@ -233,14 +233,10 @@ func indirect(t reflect.Type) reflect.Type {
 }
 
 type (
-	// ViewOption is a configuration option for creating a viewBuilder.
-	ViewOption interface {
-		apply(*viewBuilder)
-	}
-	// ViewOptionFunc is an adapter to allow the use of functions as ViewOption.
-	ViewOptionFunc func(*viewBuilder)
-	viewDefiner    interface {
-		ViewDef() []ViewOption
+	// ViewOption configures a viewBuilder.
+	ViewOption  func(*viewBuilder)
+	viewDefiner interface {
+		ViewDef(driver string) []ViewOption
 	}
 	viewBuilder struct {
 		db         *gorm.DB
@@ -252,7 +248,7 @@ type (
 )
 
 // CreateStmt accepts raw SQL with args to create a CREATE VIEW statement.
-func CreateStmt(sql string, args ...any) ViewOptionFunc {
+func CreateStmt(sql string, args ...any) ViewOption {
 	return func(b *viewBuilder) {
 		b.createStmt = b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
 			return tx.Exec(sql, args...)
@@ -262,7 +258,7 @@ func CreateStmt(sql string, args ...any) ViewOptionFunc {
 
 // BuildStmt accepts a function with gorm query builder to create a CREATE VIEW statement.
 // With this option, the view's name will be the same as the model's table name
-func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOptionFunc {
+func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOption {
 	return func(b *viewBuilder) {
 		vd := b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
 			// Unscoped() helps to remove `where deleted_at is not null` from the query when model has gorm.Model embedded
@@ -274,6 +270,6 @@ func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOptionFunc {
 	}
 }
 
-func (vf ViewOptionFunc) apply(b *viewBuilder) {
+func (vf ViewOption) apply(b *viewBuilder) {
 	vf(b)
 }

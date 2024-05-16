@@ -26,9 +26,12 @@ type PersonAddress struct {
 	DeletedAt gorm.DeletedAt
 }
 
-type TopCrowdedAddresses struct{}
+type TopCrowdedAddresses struct {
+	AddressID int
+	Count     int
+}
 
-func (TopCrowdedAddresses) ViewDef() []gormschema.ViewOption {
+func (TopCrowdedAddresses) ViewDef(driver string) []gormschema.ViewOption {
 	return []gormschema.ViewOption{
 		gormschema.CreateStmt("CREATE VIEW top_crowded_addresses AS SELECT address_id, COUNT(person_id) AS count FROM person_addresses GROUP BY address_id ORDER BY count DESC LIMIT 10"),
 	}
