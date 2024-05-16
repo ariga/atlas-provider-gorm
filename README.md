@@ -131,8 +131,9 @@ env "gorm" {
 
 ### Supported Features
 #### View
-To create a view, you can define the `ViewDef` method on a struct:
+> Note: The view feature is only available for logged-in users, run `atlas login` if you haven't already. To learn more about logged-in features for Atlas, visit [Feature Availability](https://atlasgo.io/features#database-features).
 
+To create a view, you can define the `ViewDef` method on a struct:
 ```go
 type User struct {
   gorm.Model
@@ -146,7 +147,7 @@ type WorkingAgedUsers struct {
   Age  int
 }
 
-func (WorkingAgedUsers) ViewDef() []gormschema.ViewOption {
+func (WorkingAgedUsers) ViewDef(driver string) []gormschema.ViewOption {
   return []gormschema.ViewOption{
     gormschema.BuildStmt(func(db *gorm.DB) *gorm.DB {
       return db.Model(&User{}).Where("age BETWEEN 18 AND 65").Select("name, age")
@@ -166,9 +167,14 @@ type BotlTracker struct {
   Name string
 }
 
-func (BotlTracker) ViewDef() []gormschema.ViewOption {
+func (BotlTracker) ViewDef(driver string) []gormschema.ViewOption {
+  var stmt string
+  switch driver {
+  case "mysql":
+    stmt = "CREATE VIEW botl_trackers AS SELECT id, name FROM pets WHERE name LIKE ?"
+  }
   return []gormschema.ViewOption{
-    gormschema.CreateStmt("CREATE VIEW botl_trackers AS SELECT id, name FROM pets WHERE name LIKE ?", "botl%"),
+    gormschema.CreateStmt(stmt, "botl%"),
   }
 }
 ```
@@ -183,7 +189,6 @@ func (WorkingAgedUsers) TableName() string {
   return "working_aged_users_custom_name"
 }
 ```
-> Note: The view feature is only available for logged-in users, run `atlas login` if you haven't already. To learn more about logged-in features for Atlas, visit [Feature Availability](https://atlasgo.io/features#database-features).
 ### Additional Configuration
 
 To supply custom `gorm.Config{}` object to the provider use the [Go Program Mode](#as-go-file) with
