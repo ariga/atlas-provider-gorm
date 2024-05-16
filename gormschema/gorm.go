@@ -261,9 +261,9 @@ func CreateStmt(sql string, args ...any) ViewOption {
 func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOption {
 	return func(b *viewBuilder) {
 		vd := b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
-			// Unscoped() helps to remove `where deleted_at is not null` from the query when model has gorm.Model embedded
-			// Find(nil) helps to execute the query within the context of ToSQL
-			return fn(tx).Unscoped().Find(nil)
+			return fn(tx).
+				Unscoped(). // Skip gorm deleted_at filtering.
+				Find(nil)   // Execute the query and convert it to SQL.
 		})
 
 		b.createStmt = fmt.Sprintf("CREATE VIEW %s AS %s", b.viewName, vd)
