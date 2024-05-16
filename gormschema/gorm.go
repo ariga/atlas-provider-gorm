@@ -234,7 +234,8 @@ func indirect(t reflect.Type) reflect.Type {
 
 type (
 	// ViewOption configures a viewBuilder.
-	ViewOption  func(*viewBuilder)
+	ViewOption func(*viewBuilder)
+	// ViewDefiner defines a view.
 	ViewDefiner interface {
 		ViewDef(driver string) []ViewOption
 	}
