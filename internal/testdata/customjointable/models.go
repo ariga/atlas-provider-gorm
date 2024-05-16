@@ -3,8 +3,9 @@ package customjointable
 import (
 	"time"
 
-	"ariga.io/atlas-provider-gorm/gormschema"
 	"gorm.io/gorm"
+
+	"ariga.io/atlas-provider-gorm/gormschema"
 )
 
 type Person struct {

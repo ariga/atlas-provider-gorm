@@ -177,13 +177,13 @@ The "view-based" model struct works just like a regular model struct; you can us
 var botlFamily []models.BotlTracker
 db.Find(&botlFamily)
 ```
-The view's name in the case of using the `BuildStmt` option will adhere to the GORM convention, which is the pluralized struct name (in this case, `working_aged_users`), but it could be customized using the `TableName()` method:"
+The view's name in the case of using the `BuildStmt` option will adhere to the GORM convention, which is the pluralized struct name (in this case, `working_aged_users`), but it could be customized using the `TableName()` method:
 ```go
 func (WorkingAgedUsers) TableName() string {
   return "working_aged_users_custom_name"
 }
 ```
-*Note: The view feature is only available for logged-in users, run `atlas login` if you haven't already. To learn more about logged-in features for Atlas, visit [Feature Availability](https://atlasgo.io/features#database-features).
+> Note: The view feature is only available for logged-in users, run `atlas login` if you haven't already. To learn more about logged-in features for Atlas, visit [Feature Availability](https://atlasgo.io/features#database-features).
 ### Additional Configuration
 
 To supply custom `gorm.Config{}` object to the provider use the [Go Program Mode](#as-go-file) with

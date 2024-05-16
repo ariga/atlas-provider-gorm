@@ -45,12 +45,12 @@ func WithConfig(cfg *gorm.Config) Option {
 }
 
 // Load loads the models and returns the DDL statements representing the schema.
-func (l *Loader) Load(objs ...any) (string, error) {
+func (l *Loader) Load(models ...any) (string, error) {
 	var (
 		views  []viewDefiner
 		tables []any
 	)
-	for _, obj := range objs {
+	for _, obj := range models {
 		switch view := obj.(type) {
 		case viewDefiner:
 			views = append(views, view)
