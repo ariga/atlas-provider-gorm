@@ -129,25 +129,28 @@ env "gorm" {
 }
 ```
 
-### Supported Features
-#### View
-> Note: The view feature is only available for logged-in users, run `atlas login` if you haven't already. To learn more about logged-in features for Atlas, visit [Feature Availability](https://atlasgo.io/features#database-features).
+### Extra Features
 
-To create a view, you can define the `ViewDef` method on a struct:
+#### Views
+
+> Note: Views are available for logged-in users, run `atlas login` if you haven't already. To learn more about logged-in features for Atlas, visit [Feature Availability](https://atlasgo.io/features#database-features).
+
+To define a Go struct as a database `VIEW`, implement the `ViewDef` method as follow:
 ```go
+// User is a regular gorm.Model stored in the "users" table.
 type User struct {
   gorm.Model
   Name string
   Age  int
 }
 
-// this is our view
+// WorkingAgedUsers is mapped to the VIEW definition below.
 type WorkingAgedUsers struct {
   Name string
   Age  int
 }
 
-func (WorkingAgedUsers) ViewDef(driver string) []gormschema.ViewOption {
+func (WorkingAgedUsers) ViewDef(dialect string) []gormschema.ViewOption {
   return []gormschema.ViewOption{
     gormschema.BuildStmt(func(db *gorm.DB) *gorm.DB {
       return db.Model(&User{}).Where("age BETWEEN 18 AND 65").Select("name, age")
@@ -155,12 +158,7 @@ func (WorkingAgedUsers) ViewDef(driver string) []gormschema.ViewOption {
   }
 }
 ```
-Then load the view just like a regular model:
-
-```go
-stmts, err := gormschema.New("mysql").Load(&models.WorkingAgedUsers{}, &models.User{})
-```
-If you need to create a complex view definition, you can utilize the `CreateStmt` option to specify a raw CREATE VIEW query, as shown below:
+In order to pass a plain `CREATE VIEW` statement, use the `CreateStmt` as follows:
 ```go
 type BotlTracker struct {
   ID   uint
@@ -177,16 +175,17 @@ func (BotlTracker) ViewDef(driver string) []gormschema.ViewOption {
     gormschema.CreateStmt(stmt, "botl%"),
   }
 }
-```
-The "view-based" model struct works just like a regular model struct; you can use it in your GORM queries. Just make sure the model's table name is the same as the view's name:
+To include both VIEWs and TABLEs in the migration generation, pass all models to the `Load` function:
 ```go
-var botlFamily []models.BotlTracker
-db.Find(&botlFamily)
+stmts, err := gormschema.New("mysql").Load(
+	&models.User{},			// Table-based model.
+	&models.WorkingAgedUsers{},	// View-based model.
+)
 ```
-The view's name in the case of using the `BuildStmt` option will adhere to the GORM convention, which is the pluralized struct name (in this case, `working_aged_users`), but it could be customized using the `TableName()` method:
+The view-based model works just like a regular models in GORM queries. However, make sure the view name is identical to the struct name, and in case they are differ, configure the name using the `TableName` method:
 ```go
 func (WorkingAgedUsers) TableName() string {
-  return "working_aged_users_custom_name"
+  return "working_aged_users_custom_name" // View name is different than pluralized struct name.
 }
 ```
 ### Additional Configuration
