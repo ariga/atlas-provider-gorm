@@ -1,10 +1,11 @@
 package customjointable
 
-
 import (
 	"time"
 
 	"gorm.io/gorm"
+
+	"ariga.io/atlas-provider-gorm/gormschema"
 )
 
 type Person struct {
@@ -23,4 +24,15 @@ type PersonAddress struct {
 	AddressID int `gorm:"primaryKey"`
 	CreatedAt time.Time
 	DeletedAt gorm.DeletedAt
+}
+
+type TopCrowdedAddresses struct {
+	AddressID int
+	Count     int
+}
+
+func (TopCrowdedAddresses) ViewDef(dialect string) []gormschema.ViewOption {
+	return []gormschema.ViewOption{
+		gormschema.CreateStmt("CREATE VIEW top_crowded_addresses AS SELECT address_id, COUNT(person_id) AS count FROM person_addresses GROUP BY address_id ORDER BY count DESC LIMIT 10"),
+	}
 }

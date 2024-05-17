@@ -27,7 +27,7 @@ func TestLoad(t *testing.T) {
 }
 
 func TestDeterministicOutput(t *testing.T) {
-	expected := "CREATE TABLE `users` (`id` integer,`created_at` datetime,`updated_at` datetime,`deleted_at` datetime,`name` text,PRIMARY KEY (`id`));\n" +
+	expected := "CREATE TABLE `users` (`id` integer,`created_at` datetime,`updated_at` datetime,`deleted_at` datetime,`name` text,`age` integer,PRIMARY KEY (`id`));\n" +
 		"CREATE INDEX `idx_users_deleted_at` ON `users`(`deleted_at`);\n" +
 		"CREATE TABLE `pets` (`id` integer,`created_at` datetime,`updated_at` datetime,`deleted_at` datetime,`name` text,`user_id` integer,PRIMARY KEY (`id`),CONSTRAINT `fk_users_pets` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`));\nCREATE INDEX `idx_pets_deleted_at` ON `pets`(`deleted_at`);\n\n"
 	cmd := &LoadCmd{

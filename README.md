@@ -129,6 +129,66 @@ env "gorm" {
 }
 ```
 
+### Extra Features
+
+#### Views
+
+> Note: Views are available for logged-in users, run `atlas login` if you haven't already. To learn more about logged-in features for Atlas, visit [Feature Availability](https://atlasgo.io/features#database-features).
+
+To define a Go struct as a database `VIEW`, implement the `ViewDef` method as follow:
+```go
+// User is a regular gorm.Model stored in the "users" table.
+type User struct {
+  gorm.Model
+  Name string
+  Age  int
+}
+
+// WorkingAgedUsers is mapped to the VIEW definition below.
+type WorkingAgedUsers struct {
+  Name string
+  Age  int
+}
+
+func (WorkingAgedUsers) ViewDef(dialect string) []gormschema.ViewOption {
+  return []gormschema.ViewOption{
+    gormschema.BuildStmt(func(db *gorm.DB) *gorm.DB {
+      return db.Model(&User{}).Where("age BETWEEN 18 AND 65").Select("name, age")
+    }),
+  }
+}
+```
+In order to pass a plain `CREATE VIEW` statement, use the `CreateStmt` as follows:
+```go
+type BotlTracker struct {
+  ID   uint
+  Name string
+}
+
+func (BotlTracker) ViewDef(dialect string) []gormschema.ViewOption {
+  var stmt string
+  switch dialect {
+  case "mysql":
+    stmt = "CREATE VIEW botl_trackers AS SELECT id, name FROM pets WHERE name LIKE 'botl%'"
+  }
+  return []gormschema.ViewOption{
+    gormschema.CreateStmt(stmt),
+  }
+}
+```
+To include both VIEWs and TABLEs in the migration generation, pass all models to the `Load` function:
+```go
+stmts, err := gormschema.New("mysql").Load(
+  &models.User{},			// Table-based model.
+  &models.WorkingAgedUsers{},	// View-based model.
+)
+```
+The view-based model works just like a regular models in GORM queries. However, make sure the view name is identical to the struct name, and in case they are differ, configure the name using the `TableName` method:
+```go
+func (WorkingAgedUsers) TableName() string {
+  return "working_aged_users_custom_name" // View name is different than pluralized struct name.
+}
+```
 ### Additional Configuration
 
 To supply custom `gorm.Config{}` object to the provider use the [Go Program Mode](#as-go-file) with
@@ -210,9 +270,9 @@ The provider supports the following databases:
   you should use the following code:
   ```go
   stmts, err := gormschema.New("mysql",
-  	gormschema.WithJoinTable(
-  		&Models.Person{}, "Addresses", &Models.PersonAddress{},
-  	),
+    gormschema.WithJoinTable(
+      &Models.Person{}, "Addresses", &Models.PersonAddress{},
+    ),
   ).Load(&Models.Address{}, &Models.Person{})
   ```
 

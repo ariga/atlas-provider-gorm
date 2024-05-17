@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 
 	"ariga.io/atlas-go-sdk/recordriver"
@@ -45,6 +46,18 @@ func WithConfig(cfg *gorm.Config) Option {
 
 // Load loads the models and returns the DDL statements representing the schema.
 func (l *Loader) Load(models ...any) (string, error) {
+	var (
+		views  []ViewDefiner
+		tables []any
+	)
+	for _, obj := range models {
+		switch view := obj.(type) {
+		case ViewDefiner:
+			views = append(views, view)
+		default:
+			tables = append(tables, obj)
+		}
+	}
 	var di gorm.Dialector
 	switch l.dialect {
 	case "sqlite":
@@ -91,21 +104,22 @@ func (l *Loader) Load(models ...any) (string, error) {
 			return "", err
 		}
 	}
-	if err = db.AutoMigrate(models...); err != nil {
+	if err = db.AutoMigrate(tables...); err != nil {
+		return "", err
+	}
+	db, err = gorm.Open(dialector{Dialector: di}, l.config)
+	if err != nil {
+		return "", err
+	}
+	cm, ok := db.Migrator().(*migrator)
+	if !ok {
+		return "", fmt.Errorf("unexpected migrator type: %T", db.Migrator())
+	}
+	if err = cm.CreateViews(views); err != nil {
 		return "", err
 	}
 	if !l.config.DisableForeignKeyConstraintWhenMigrating && l.dialect != "sqlite" {
-		db, err = gorm.Open(dialector{
-			Dialector: di,
-		}, l.config)
-		if err != nil {
-			return "", err
-		}
-		cm, ok := db.Migrator().(*migrator)
-		if !ok {
-			return "", err
-		}
-		if err = cm.CreateConstraints(models); err != nil {
+		if err = cm.CreateConstraints(tables); err != nil {
 			return "", err
 		}
 	}
@@ -125,8 +139,8 @@ type dialector struct {
 	gorm.Dialector
 }
 
-// Migrator returns a new gorm.Migrator which can be used to automatically create all Constraints
-// on existing tables.
+// Migrator returns a new gorm.Migrator, which can be used to extend the default migrator,
+// helping to create constraints and views ...
 func (d dialector) Migrator(db *gorm.DB) gorm.Migrator {
 	return &migrator{
 		Migrator: gormig.Migrator{
@@ -179,11 +193,79 @@ func (m *migrator) CreateConstraints(models []any) error {
 	return nil
 }
 
+// CreateViews creates the given "view-based" models
+func (m *migrator) CreateViews(views []ViewDefiner) error {
+	for _, view := range views {
+		viewName := m.DB.Config.NamingStrategy.TableName(indirect(reflect.TypeOf(view)).Name())
+		if namer, ok := view.(interface {
+			TableName() string
+		}); ok {
+			viewName = namer.TableName()
+		}
+		viewBuilder := &viewBuilder{
+			db:       m.DB,
+			viewName: viewName,
+		}
+		for _, opt := range view.ViewDef(m.Dialector.Name()) {
+			opt(viewBuilder)
+		}
+		if err := m.DB.Exec(viewBuilder.createStmt).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // WithJoinTable sets up a join table for the given model and field.
 func WithJoinTable(model any, field string, jointable any) Option {
 	return func(l *Loader) {
 		l.beforeAutoMigrate = append(l.beforeAutoMigrate, func(db *gorm.DB) error {
 			return db.SetupJoinTable(model, field, jointable)
 		})
+	}
+}
+
+func indirect(t reflect.Type) reflect.Type {
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t
+}
+
+type (
+	// ViewOption configures a viewBuilder.
+	ViewOption func(*viewBuilder)
+	// ViewDefiner defines a view.
+	ViewDefiner interface {
+		ViewDef(dialect string) []ViewOption
+	}
+	viewBuilder struct {
+		db         *gorm.DB
+		createStmt string
+		// viewName is only used for the BuildStmt option.
+		// BuildStmt returns only a subquery; viewName helps to create a full CREATE VIEW statement.
+		viewName string
+	}
+)
+
+// CreateStmt accepts raw SQL to create a CREATE VIEW statement.
+func CreateStmt(stmt string) ViewOption {
+	return func(b *viewBuilder) {
+		b.createStmt = b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			return tx.Exec(stmt)
+		})
+	}
+}
+
+// BuildStmt accepts a function with gorm query builder to create a CREATE VIEW statement.
+// With this option, the view's name will be the same as the model's table name
+func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOption {
+	return func(b *viewBuilder) {
+		vd := b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			return fn(tx).
+				Unscoped(). // Skip gorm deleted_at filtering.
+				Find(nil)   // Execute the query and convert it to SQL.
+		})
+		b.createStmt = fmt.Sprintf("CREATE VIEW %s AS %s", b.viewName, vd)
 	}
 }
