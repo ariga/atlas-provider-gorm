@@ -18,9 +18,9 @@ type TopPetOwner struct {
 	PetCount int
 }
 
-func (TopPetOwner) ViewDef(driver string) []gormschema.ViewOption {
+func (TopPetOwner) ViewDef(dialect string) []gormschema.ViewOption {
 	var stmt string
-	switch driver {
+	switch dialect {
 	case "mysql":
 		stmt = "CREATE VIEW top_pet_owners AS SELECT user_id, COUNT(id) AS pet_count FROM pets GROUP BY user_id ORDER BY pet_count DESC LIMIT 10"
 	case "postgres":

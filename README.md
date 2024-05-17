@@ -165,9 +165,9 @@ type BotlTracker struct {
   Name string
 }
 
-func (BotlTracker) ViewDef(driver string) []gormschema.ViewOption {
+func (BotlTracker) ViewDef(dialect string) []gormschema.ViewOption {
   var stmt string
-  switch driver {
+  switch dialect {
   case "mysql":
     stmt = "CREATE VIEW botl_trackers AS SELECT id, name FROM pets WHERE name LIKE ?"
   }
@@ -175,11 +175,12 @@ func (BotlTracker) ViewDef(driver string) []gormschema.ViewOption {
     gormschema.CreateStmt(stmt, "botl%"),
   }
 }
+```
 To include both VIEWs and TABLEs in the migration generation, pass all models to the `Load` function:
 ```go
 stmts, err := gormschema.New("mysql").Load(
-	&models.User{},			// Table-based model.
-	&models.WorkingAgedUsers{},	// View-based model.
+  &models.User{},			// Table-based model.
+  &models.WorkingAgedUsers{},	// View-based model.
 )
 ```
 The view-based model works just like a regular models in GORM queries. However, make sure the view name is identical to the struct name, and in case they are differ, configure the name using the `TableName` method:

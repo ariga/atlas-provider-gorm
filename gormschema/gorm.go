@@ -237,7 +237,7 @@ type (
 	ViewOption func(*viewBuilder)
 	// ViewDefiner defines a view.
 	ViewDefiner interface {
-		ViewDef(driver string) []ViewOption
+		ViewDef(dialect string) []ViewOption
 	}
 	viewBuilder struct {
 		db         *gorm.DB
