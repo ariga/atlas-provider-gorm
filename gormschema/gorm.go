@@ -248,11 +248,11 @@ type (
 	}
 )
 
-// CreateStmt accepts raw SQL with args to create a CREATE VIEW statement.
-func CreateStmt(sql string, args ...any) ViewOption {
+// CreateStmt accepts raw SQL to create a CREATE VIEW statement.
+func CreateStmt(sql string) ViewOption {
 	return func(b *viewBuilder) {
 		b.createStmt = b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
-			return tx.Exec(sql, args...)
+			return tx.Exec(sql)
 		})
 	}
 }
@@ -266,7 +266,6 @@ func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOption {
 				Unscoped(). // Skip gorm deleted_at filtering.
 				Find(nil)   // Execute the query and convert it to SQL.
 		})
-
 		b.createStmt = fmt.Sprintf("CREATE VIEW %s AS %s", b.viewName, vd)
 	}
 }

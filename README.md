@@ -169,10 +169,10 @@ func (BotlTracker) ViewDef(dialect string) []gormschema.ViewOption {
   var stmt string
   switch dialect {
   case "mysql":
-    stmt = "CREATE VIEW botl_trackers AS SELECT id, name FROM pets WHERE name LIKE ?"
+    stmt = "CREATE VIEW botl_trackers AS SELECT id, name FROM pets WHERE name LIKE 'botl%'"
   }
   return []gormschema.ViewOption{
-    gormschema.CreateStmt(stmt, "botl%"),
+    gormschema.CreateStmt(stmt),
   }
 }
 ```
