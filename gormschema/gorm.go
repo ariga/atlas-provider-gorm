@@ -249,10 +249,10 @@ type (
 )
 
 // CreateStmt accepts raw SQL to create a CREATE VIEW statement.
-func CreateStmt(sql string) ViewOption {
+func CreateStmt(stmt string) ViewOption {
 	return func(b *viewBuilder) {
 		b.createStmt = b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
-			return tx.Exec(sql)
+			return tx.Exec(stmt)
 		})
 	}
 }
