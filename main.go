@@ -17,9 +17,10 @@ import (
 	"text/template"
 	"time"
 
-	"ariga.io/atlas-provider-gorm/gormschema"
 	"github.com/alecthomas/kong"
 	"golang.org/x/tools/go/packages"
+
+	"ariga.io/atlas-provider-gorm/gormschema"
 )
 
 var (
