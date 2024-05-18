@@ -17,6 +17,7 @@ import (
 	"text/template"
 	"time"
 
+	"ariga.io/atlas-provider-gorm/gormschema"
 	"github.com/alecthomas/kong"
 	"golang.org/x/tools/go/packages"
 )
@@ -46,11 +47,16 @@ type LoadCmd struct {
 	out     io.Writer
 }
 
+var viewDefiner = reflect.TypeOf((*gormschema.ViewDefiner)(nil)).Elem()
+
 func (c *LoadCmd) Run() error {
 	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedModule | packages.NeedDeps}
-	pkgs, err := packages.Load(cfg, c.Path)
+	pkgs, err := packages.Load(cfg, c.Path, viewDefiner.PkgPath())
 	if err != nil {
-		return err
+		return fmt.Errorf("loading package: %w", err)
+	}
+	if len(pkgs) < 2 {
+		return fmt.Errorf("missing package information for: %s", c.Path)
 	}
 	models := gatherModels(pkgs)
 	p := Payload{
@@ -142,19 +148,22 @@ type model struct {
 
 func gatherModels(pkgs []*packages.Package) []model {
 	var models []model
-	for _, pkg := range pkgs {
-		for k, v := range pkg.TypesInfo.Defs {
-			_, ok := v.(*types.TypeName)
-			if !ok || !k.IsExported() {
-				continue
-			}
-			if isGORMModel(k.Obj.Decl) {
-				models = append(models, model{
-					ImportPath: pkg.PkgPath,
-					Name:       k.Name,
-					PkgName:    pkg.Name,
-				})
-			}
+	schemaPkg, pkg := pkgs[0], pkgs[1]
+	if schemaPkg.PkgPath != viewDefiner.PkgPath() {
+		schemaPkg, pkg = pkgs[1], pkgs[0]
+	}
+	view := schemaPkg.Types.Scope().Lookup(viewDefiner.Name()).Type().Underlying().(*types.Interface)
+	for k, v := range pkg.TypesInfo.Defs {
+		typ, ok := v.(*types.TypeName)
+		if !ok || !k.IsExported() {
+			continue
+		}
+		if isGORMModel(k.Obj.Decl) || types.Implements(typ.Type(), view) {
+			models = append(models, model{
+				ImportPath: pkg.PkgPath,
+				Name:       k.Name,
+				PkgName:    pkg.Name,
+			})
 		}
 	}
 	// Return models in deterministic order.
