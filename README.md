@@ -22,7 +22,7 @@ go get -u ariga.io/atlas-provider-gorm
 
 #### Standalone 
 
-If all of your GORM models exist in a single package, and either embed `gorm.Model` or contain `gorm` struct tags, 
+If all of your GORM models and [views](#views) exist in a single package, and the models either embed `gorm.Model` or contain `gorm` struct tags, 
 you can use the provider directly to load your GORM schema into Atlas.
 
 In your project directory, create a new file named `atlas.hcl` with the following contents:
