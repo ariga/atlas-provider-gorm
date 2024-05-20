@@ -51,15 +51,24 @@ type LoadCmd struct {
 var viewDefiner = reflect.TypeOf((*gormschema.ViewDefiner)(nil)).Elem()
 
 func (c *LoadCmd) Run() error {
-	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedModule | packages.NeedDeps}
-	pkgs, err := packages.Load(cfg, c.Path, viewDefiner.PkgPath())
-	if err != nil {
+	cfg := &packages.Config{
+		Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedModule | packages.NeedDeps,
+	}
+	var models []model
+	switch pkgs, err := packages.Load(cfg, c.Path, viewDefiner.PkgPath()); {
+	case err != nil:
 		return fmt.Errorf("loading package: %w", err)
-	}
-	if len(pkgs) < 2 {
+	case len(pkgs) != 2:
 		return fmt.Errorf("missing package information for: %s", c.Path)
+	default:
+		schemaPkg, modelsPkg := pkgs[0], pkgs[1]
+		if schemaPkg.PkgPath != viewDefiner.PkgPath() {
+			schemaPkg, modelsPkg = pkgs[1], pkgs[0]
+		}
+		models = gatherModels(modelsPkg, schemaPkg.Types.Scope().
+			Lookup(viewDefiner.Name()).Type().
+			Underlying().(*types.Interface))
 	}
-	models := gatherModels(pkgs)
 	p := Payload{
 		Models:  models,
 		Dialect: c.Dialect,
@@ -147,13 +156,8 @@ type model struct {
 	Name       string
 }
 
-func gatherModels(pkgs []*packages.Package) []model {
+func gatherModels(pkg *packages.Package, view *types.Interface) []model {
 	var models []model
-	schemaPkg, pkg := pkgs[0], pkgs[1]
-	if schemaPkg.PkgPath != viewDefiner.PkgPath() {
-		schemaPkg, pkg = pkgs[1], pkgs[0]
-	}
-	view := schemaPkg.Types.Scope().Lookup(viewDefiner.Name()).Type().Underlying().(*types.Interface)
 	for k, v := range pkg.TypesInfo.Defs {
 		typ, ok := v.(*types.TypeName)
 		if !ok || !k.IsExported() {
