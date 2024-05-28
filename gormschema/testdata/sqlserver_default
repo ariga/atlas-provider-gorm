@@ -2,6 +2,7 @@ CREATE TABLE "events" ("eventId" nvarchar(191),"locationId" nvarchar(191),PRIMAR
 CREATE UNIQUE INDEX "idx_events_location_id" ON "events"("locationId");
 CREATE TABLE "locations" ("locationId" nvarchar(191),"eventId" nvarchar(191),PRIMARY KEY ("locationId"));
 CREATE UNIQUE INDEX "idx_locations_event_id" ON "locations"("eventId");
+CREATE TABLE "user_pet_histories" ("user_id" bigint,"pet_id" bigint,"created_at" datetimeoffset,PRIMARY KEY ("user_id","pet_id"));
 CREATE TABLE "users" ("id" bigint IDENTITY(1,1),"created_at" datetimeoffset,"updated_at" datetimeoffset,"deleted_at" datetimeoffset,"name" nvarchar(MAX),"age" bigint,PRIMARY KEY ("id"));
 CREATE INDEX "idx_users_deleted_at" ON "users"("deleted_at");
 CREATE TABLE "hobbies" ("id" bigint IDENTITY(1,1),"name" nvarchar(MAX),PRIMARY KEY ("id"));
@@ -10,6 +11,33 @@ CREATE TABLE "pets" ("id" bigint IDENTITY(1,1),"created_at" datetimeoffset,"upda
 CREATE INDEX "idx_pets_deleted_at" ON "pets"("deleted_at");
 CREATE VIEW working_aged_users AS SELECT name, age FROM "users" WHERE age BETWEEN 18 AND 65;
 CREATE VIEW top_pet_owners AS SELECT user_id, COUNT(id) AS pet_count FROM pets GROUP BY user_id ORDER BY pet_count DESC OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY;
+CREATE TRIGGER trg_insert_user_pet_history
+ON pets
+AFTER INSERT
+AS
+BEGIN
+	INSERT INTO user_pet_histories (user_id, pet_id, created_at)
+	SELECT 
+		inserted.user_id, 
+		inserted.id, 
+		GETDATE()
+	FROM 
+		inserted
+	WHERE 
+		inserted.user_id IS NOT NULL;
+END;
+CREATE TRIGGER trg_adding_heart_on_pet
+ON pets
+INSTEAD OF INSERT
+AS
+BEGIN
+	INSERT INTO pets (name, user_id)
+	SELECT
+		CONCAT(inserted.name, ' ❤️'),
+		inserted.user_id
+	FROM
+		inserted;
+END;
 ALTER TABLE "events" ADD CONSTRAINT "fk_locations_event" FOREIGN KEY ("locationId") REFERENCES "locations"("locationId");
 ALTER TABLE "locations" ADD CONSTRAINT "fk_events_location" FOREIGN KEY ("eventId") REFERENCES "events"("eventId");
 ALTER TABLE "user_hobbies" ADD CONSTRAINT "fk_user_hobbies_hobby" FOREIGN KEY ("hobby_id") REFERENCES "hobbies"("id");

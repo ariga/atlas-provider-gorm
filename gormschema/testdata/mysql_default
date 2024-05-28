@@ -1,11 +1,25 @@
 CREATE TABLE `events` (`eventId` varchar(191),`locationId` varchar(191),PRIMARY KEY (`eventId`),UNIQUE INDEX `idx_events_location_id` (`locationId`));
 CREATE TABLE `locations` (`locationId` varchar(191),`eventId` varchar(191),PRIMARY KEY (`locationId`),UNIQUE INDEX `idx_locations_event_id` (`eventId`));
+CREATE TABLE `user_pet_histories` (`user_id` bigint unsigned,`pet_id` bigint unsigned,`created_at` datetime(3) NULL,PRIMARY KEY (`user_id`,`pet_id`));
 CREATE TABLE `users` (`id` bigint unsigned AUTO_INCREMENT,`created_at` datetime(3) NULL,`updated_at` datetime(3) NULL,`deleted_at` datetime(3) NULL,`name` longtext,`age` bigint,PRIMARY KEY (`id`),INDEX `idx_users_deleted_at` (`deleted_at`));
 CREATE TABLE `hobbies` (`id` bigint unsigned AUTO_INCREMENT,`name` longtext,PRIMARY KEY (`id`));
 CREATE TABLE `user_hobbies` (`hobby_id` bigint unsigned,`user_id` bigint unsigned,PRIMARY KEY (`hobby_id`,`user_id`));
 CREATE TABLE `pets` (`id` bigint unsigned AUTO_INCREMENT,`created_at` datetime(3) NULL,`updated_at` datetime(3) NULL,`deleted_at` datetime(3) NULL,`name` longtext,`user_id` bigint unsigned,PRIMARY KEY (`id`),INDEX `idx_pets_deleted_at` (`deleted_at`));
 CREATE VIEW working_aged_users AS SELECT name, age FROM `users` WHERE age BETWEEN 18 AND 65;
 CREATE VIEW top_pet_owners AS SELECT user_id, COUNT(id) AS pet_count FROM pets GROUP BY user_id ORDER BY pet_count DESC LIMIT 10;
+CREATE TRIGGER trg_insert_user_pet_history
+AFTER INSERT ON pets
+FOR EACH ROW
+BEGIN
+	INSERT INTO user_pet_histories (user_id, pet_id, created_at)
+	VALUES (NEW.user_id, NEW.id, NOW(3));
+END;
+CREATE TRIGGER trg_adding_heart_on_pet 
+BEFORE INSERT ON pets 
+FOR EACH ROW
+BEGIN
+	SET NEW.name = CONCAT(NEW.name, ' ❤️');
+END;
 ALTER TABLE `events` ADD CONSTRAINT `fk_locations_event` FOREIGN KEY (`locationId`) REFERENCES `locations`(`locationId`);
 ALTER TABLE `locations` ADD CONSTRAINT `fk_events_location` FOREIGN KEY (`eventId`) REFERENCES `events`(`eventId`);
 ALTER TABLE `user_hobbies` ADD CONSTRAINT `fk_user_hobbies_hobby` FOREIGN KEY (`hobby_id`) REFERENCES `hobbies`(`id`);
