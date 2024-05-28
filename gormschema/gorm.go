@@ -364,15 +364,17 @@ func (m *migrator) orderModels(models ...any) ([]any, error) {
 func (m *migrator) CreateTriggers(models []any) error {
 	for _, model := range models {
 		if md, ok := model.(interface {
-			Triggers(string) []TriggerOption
+			Triggers(string) [][]TriggerOption
 		}); ok {
-			for _, option := range md.Triggers(m.Dialector.Name()) {
+			for _, options := range md.Triggers(m.Dialector.Name()) {
 				schemaBuilder := &schemaBuilder{
 					db: m.DB,
 				}
-				option.apply(schemaBuilder)
-				if err := m.DB.Exec(schemaBuilder.createStmt).Error; err != nil {
-					return err
+				for _, option := range options {
+					option.apply(schemaBuilder)
+					if err := m.DB.Exec(schemaBuilder.createStmt).Error; err != nil {
+						return err
+					}
 				}
 			}
 		}
