@@ -17,15 +17,6 @@ import (
 	gormig "gorm.io/gorm/migrator"
 )
 
-// New returns a new Loader.
-func New(dialect string, opts ...Option) *Loader {
-	l := &Loader{dialect: dialect, config: &gorm.Config{}}
-	for _, opt := range opts {
-		opt(l)
-	}
-	return l
-}
-
 type (
 	// Loader is a Loader for gorm schema.
 	Loader struct {
@@ -35,12 +26,66 @@ type (
 	}
 	// Option configures the Loader.
 	Option func(*Loader)
+	// ViewOption configures a viewBuilder.
+	ViewOption func(*viewBuilder)
+	// ViewDefiner defines a view.
+	ViewDefiner interface {
+		ViewDef(dialect string) []ViewOption
+	}
+	viewBuilder struct {
+		db         *gorm.DB
+		createStmt string
+		// viewName is only used for the BuildStmt option.
+		// BuildStmt returns only a subquery; viewName helps to create a full CREATE VIEW statement.
+		viewName string
+	}
 )
 
 // WithConfig sets the gorm config.
 func WithConfig(cfg *gorm.Config) Option {
 	return func(l *Loader) {
 		l.config = cfg
+	}
+}
+
+// WithJoinTable sets up a join table for the given model and field.
+// Deprecated: put the join tables alongside the models in the Load call.
+func WithJoinTable(model any, field string, jointable any) Option {
+	return func(l *Loader) {
+		l.beforeAutoMigrate = append(l.beforeAutoMigrate, func(db *gorm.DB) error {
+			return db.SetupJoinTable(model, field, jointable)
+		})
+	}
+}
+
+// New returns a new Loader.
+func New(dialect string, opts ...Option) *Loader {
+	l := &Loader{dialect: dialect, config: &gorm.Config{}}
+	for _, opt := range opts {
+		opt(l)
+	}
+	return l
+}
+
+// CreateStmt accepts raw SQL to create a CREATE VIEW statement.
+func CreateStmt(stmt string) ViewOption {
+	return func(b *viewBuilder) {
+		b.createStmt = b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			return tx.Exec(stmt)
+		})
+	}
+}
+
+// BuildStmt accepts a function with gorm query builder to create a CREATE VIEW statement.
+// With this option, the view's name will be the same as the model's table name
+func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOption {
+	return func(b *viewBuilder) {
+		vd := b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			return fn(tx).
+				Unscoped(). // Skip gorm deleted_at filtering.
+				Find(nil)   // Execute the query and convert it to SQL.
+		})
+		b.createStmt = fmt.Sprintf("CREATE VIEW %s AS %s", b.viewName, vd)
 	}
 }
 
@@ -256,61 +301,6 @@ func (m *migrator) CreateViews(views []ViewDefiner) error {
 	return nil
 }
 
-// WithJoinTable sets up a join table for the given model and field.
-// Deprecated: put the join tables alongside the models in the Load call.
-func WithJoinTable(model any, field string, jointable any) Option {
-	return func(l *Loader) {
-		l.beforeAutoMigrate = append(l.beforeAutoMigrate, func(db *gorm.DB) error {
-			return db.SetupJoinTable(model, field, jointable)
-		})
-	}
-}
-
-func indirect(t reflect.Type) reflect.Type {
-	for t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-	return t
-}
-
-type (
-	// ViewOption configures a viewBuilder.
-	ViewOption func(*viewBuilder)
-	// ViewDefiner defines a view.
-	ViewDefiner interface {
-		ViewDef(dialect string) []ViewOption
-	}
-	viewBuilder struct {
-		db         *gorm.DB
-		createStmt string
-		// viewName is only used for the BuildStmt option.
-		// BuildStmt returns only a subquery; viewName helps to create a full CREATE VIEW statement.
-		viewName string
-	}
-)
-
-// CreateStmt accepts raw SQL to create a CREATE VIEW statement.
-func CreateStmt(stmt string) ViewOption {
-	return func(b *viewBuilder) {
-		b.createStmt = b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
-			return tx.Exec(stmt)
-		})
-	}
-}
-
-// BuildStmt accepts a function with gorm query builder to create a CREATE VIEW statement.
-// With this option, the view's name will be the same as the model's table name
-func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOption {
-	return func(b *viewBuilder) {
-		vd := b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
-			return fn(tx).
-				Unscoped(). // Skip gorm deleted_at filtering.
-				Find(nil)   // Execute the query and convert it to SQL.
-		})
-		b.createStmt = fmt.Sprintf("CREATE VIEW %s AS %s", b.viewName, vd)
-	}
-}
-
 // orderModels places join tables at the end of the list of models (if any),
 // which helps GORM resolve m2m relationships correctly.
 func (m *migrator) orderModels(models ...any) ([]any, error) {
@@ -347,4 +337,11 @@ func (m *migrator) orderModels(models ...any) ([]any, error) {
 		}
 	}
 	return append(otherTables, joinTables...), nil
+}
+
+func indirect(t reflect.Type) reflect.Type {
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t
 }
