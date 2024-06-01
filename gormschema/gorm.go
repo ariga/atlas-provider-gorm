@@ -257,6 +257,7 @@ func (m *migrator) CreateViews(views []ViewDefiner) error {
 }
 
 // WithJoinTable sets up a join table for the given model and field.
+// Deprecated: put the join tables alongside the models in the Load call.
 func WithJoinTable(model any, field string, jointable any) Option {
 	return func(l *Loader) {
 		l.beforeAutoMigrate = append(l.beforeAutoMigrate, func(db *gorm.DB) error {
@@ -322,7 +323,7 @@ func (m *migrator) orderModels(models []any) ([]any, error) {
 		err := m.RunWithValue(model, func(stmt *gorm.Statement) error {
 			for _, rel := range stmt.Schema.Relationships.Relations {
 				if rel.JoinTable != nil {
-					joinTableDBNames[rel.JoinTable.Name] = true
+					joinTableDBNames[rel.JoinTable.Table] = true
 					return nil
 				}
 			}

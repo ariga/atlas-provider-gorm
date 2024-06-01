@@ -2,6 +2,8 @@ CREATE TABLE `users` (`id` integer,`created_at` datetime,`updated_at` datetime,`
 CREATE INDEX `idx_users_deleted_at` ON `users`(`deleted_at`);
 CREATE TABLE `pets` (`id` integer,`created_at` datetime,`updated_at` datetime,`deleted_at` datetime,`name` text,`user_id` integer,PRIMARY KEY (`id`),CONSTRAINT `fk_users_pets` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`));
 CREATE INDEX `idx_pets_deleted_at` ON `pets`(`deleted_at`);
+CREATE TABLE `hobbies` (`id` integer,`name` text,PRIMARY KEY (`id`));
+CREATE TABLE `user_hobbies` (`hobby_id` integer,`user_id` integer,PRIMARY KEY (`hobby_id`,`user_id`),CONSTRAINT `fk_user_hobbies_hobby` FOREIGN KEY (`hobby_id`) REFERENCES `hobbies`(`id`),CONSTRAINT `fk_user_hobbies_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`));
 CREATE TABLE `locations` (`locationId` text,`eventId` text,PRIMARY KEY (`locationId`),CONSTRAINT `fk_events_location` FOREIGN KEY (`eventId`) REFERENCES `events`(`eventId`));
 CREATE UNIQUE INDEX `idx_locations_event_id` ON `locations`(`eventId`);
 CREATE TABLE `events` (`eventId` text,`locationId` text,PRIMARY KEY (`eventId`),CONSTRAINT `fk_locations_event` FOREIGN KEY (`locationId`) REFERENCES `locations`(`locationId`));

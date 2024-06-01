@@ -15,7 +15,7 @@ type Person struct {
 }
 
 type Address struct {
-	ID   int
+	ID   int `gorm:"primaryKey"`
 	Name string
 }
 
