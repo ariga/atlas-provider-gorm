@@ -115,7 +115,7 @@ func (l *Loader) Load(models ...any) (string, error) {
 	if err = cm.setupJoinTables(tables...); err != nil {
 		return "", err
 	}
-	orderedTables, err := cm.orderModels(tables)
+	orderedTables, err := cm.orderModels(tables...)
 	if err != nil {
 		return "", err
 	}
@@ -313,7 +313,7 @@ func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOption {
 
 // orderModels places join tables at the end of the list of models (if any),
 // which helps GORM resolve m2m relationships correctly.
-func (m *migrator) orderModels(models []any) ([]any, error) {
+func (m *migrator) orderModels(models ...any) ([]any, error) {
 	var (
 		joinTableDBNames = make(map[string]bool)
 		otherTables      []any
