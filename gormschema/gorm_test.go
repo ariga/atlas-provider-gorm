@@ -16,7 +16,7 @@ import (
 func TestSQLiteConfig(t *testing.T) {
 	resetSession()
 	l := gormschema.New("sqlite")
-	sql, err := l.Load(models.WorkingAgedUsers{}, models.Pet{}, models.User{}, ckmodels.Event{}, ckmodels.Location{}, models.TopPetOwner{})
+	sql, err := l.Load(models.WorkingAgedUsers{}, models.Pet{}, ckmodels.Event{}, ckmodels.Location{}, models.TopPetOwner{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/sqlite_default")
 	resetSession()
