@@ -8,9 +8,16 @@ import (
 
 type User struct {
 	gorm.Model
-	Name string
-	Age  int
-	Pets []Pet
+	Name    string
+	Age     int
+	Pets    []Pet
+	Hobbies []Hobby `gorm:"many2many:user_hobbies;"`
+}
+
+type Hobby struct {
+	ID    uint
+	Name  string
+	Users []User `gorm:"many2many:user_hobbies;"`
 }
 
 type WorkingAgedUsers struct {

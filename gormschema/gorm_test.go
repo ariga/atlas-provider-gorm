@@ -16,7 +16,7 @@ import (
 func TestSQLiteConfig(t *testing.T) {
 	resetSession()
 	l := gormschema.New("sqlite")
-	sql, err := l.Load(models.WorkingAgedUsers{}, models.Pet{}, models.User{}, ckmodels.Event{}, ckmodels.Location{}, models.TopPetOwner{})
+	sql, err := l.Load(models.WorkingAgedUsers{}, models.Pet{}, ckmodels.Event{}, ckmodels.Location{}, models.TopPetOwner{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/sqlite_default")
 	resetSession()
@@ -65,6 +65,16 @@ func TestMySQLConfig(t *testing.T) {
 	sql, err = l.Load(customjointable.Address{}, customjointable.Person{}, customjointable.TopCrowdedAddresses{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_custom_join_table")
+	resetSession()
+	l = gormschema.New("mysql")
+	sql, err = l.Load(customjointable.PersonAddress{}, customjointable.Address{}, customjointable.Person{}, customjointable.TopCrowdedAddresses{})
+	require.NoError(t, err)
+	requireEqualContent(t, sql, "testdata/mysql_custom_join_table")
+	resetSession()
+	l = gormschema.New("mysql")
+	sql, err = l.Load(customjointable.Address{}, customjointable.PersonAddress{}, customjointable.Person{}, customjointable.TopCrowdedAddresses{})
+	require.NoError(t, err)
+	requireEqualContent(t, sql, "testdata/mysql_custom_join_table") // position of tables should not matter
 }
 
 func TestSQLServerConfig(t *testing.T) {

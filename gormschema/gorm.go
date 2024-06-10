@@ -104,16 +104,23 @@ func (l *Loader) Load(models ...any) (string, error) {
 			return "", err
 		}
 	}
-	if err = db.AutoMigrate(tables...); err != nil {
-		return "", err
-	}
-	db, err = gorm.Open(dialector{Dialector: di}, l.config)
+	cdb, err := gorm.Open(dialector{Dialector: di}, l.config)
 	if err != nil {
 		return "", err
 	}
-	cm, ok := db.Migrator().(*migrator)
+	cm, ok := cdb.Migrator().(*migrator)
 	if !ok {
 		return "", fmt.Errorf("unexpected migrator type: %T", db.Migrator())
+	}
+	if err = cm.setupJoinTables(tables...); err != nil {
+		return "", err
+	}
+	orderedTables, err := cm.orderModels(tables...)
+	if err != nil {
+		return "", err
+	}
+	if err = db.AutoMigrate(orderedTables...); err != nil {
+		return "", err
 	}
 	if err = cm.CreateViews(views); err != nil {
 		return "", err
@@ -193,6 +200,39 @@ func (m *migrator) CreateConstraints(models []any) error {
 	return nil
 }
 
+// setupJoinTables helps to determine custom join tables present in the model list and sets them up.
+func (m *migrator) setupJoinTables(models ...any) error {
+	var dbNameModelMap = make(map[string]any)
+	for _, model := range models {
+		err := m.RunWithValue(model, func(stmt *gorm.Statement) error {
+			dbNameModelMap[stmt.Schema.Table] = model
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	for _, model := range m.ReorderModels(models, false) {
+		err := m.RunWithValue(model, func(stmt *gorm.Statement) error {
+			for _, rel := range stmt.Schema.Relationships.Relations {
+				if rel.Field.IgnoreMigration || rel.JoinTable == nil {
+					continue
+				}
+				if joinTable, ok := dbNameModelMap[rel.JoinTable.Name]; ok {
+					if err := m.DB.SetupJoinTable(model, rel.Field.Name, joinTable); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // CreateViews creates the given "view-based" models
 func (m *migrator) CreateViews(views []ViewDefiner) error {
 	for _, view := range views {
@@ -217,6 +257,7 @@ func (m *migrator) CreateViews(views []ViewDefiner) error {
 }
 
 // WithJoinTable sets up a join table for the given model and field.
+// Deprecated: put the join tables alongside the models in the Load call.
 func WithJoinTable(model any, field string, jointable any) Option {
 	return func(l *Loader) {
 		l.beforeAutoMigrate = append(l.beforeAutoMigrate, func(db *gorm.DB) error {
@@ -268,4 +309,42 @@ func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOption {
 		})
 		b.createStmt = fmt.Sprintf("CREATE VIEW %s AS %s", b.viewName, vd)
 	}
+}
+
+// orderModels places join tables at the end of the list of models (if any),
+// which helps GORM resolve m2m relationships correctly.
+func (m *migrator) orderModels(models ...any) ([]any, error) {
+	var (
+		joinTableDBNames = make(map[string]bool)
+		otherTables      []any
+		joinTables       []any
+	)
+	for _, model := range models {
+		err := m.RunWithValue(model, func(stmt *gorm.Statement) error {
+			for _, rel := range stmt.Schema.Relationships.Relations {
+				if rel.JoinTable != nil {
+					joinTableDBNames[rel.JoinTable.Table] = true
+					return nil
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	for _, model := range models {
+		err := m.RunWithValue(model, func(stmt *gorm.Statement) error {
+			if joinTableDBNames[stmt.Schema.Table] {
+				joinTables = append(joinTables, model)
+			} else {
+				otherTables = append(otherTables, model)
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	return append(otherTables, joinTables...), nil
 }

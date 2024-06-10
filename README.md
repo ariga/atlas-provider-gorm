@@ -242,11 +242,10 @@ The provider supports the following databases:
 
 ### Frequently Asked Questions
 
-* **Foreign key constraints not generated correctly** -
-  If a [Customize JoinTable](https://gorm.io/docs/many_to_many.html#Customize-JoinTable) is defined in the schema, 
-  you need to use the provider as a [Go Program](#as-go-file) and set it up using the `WithJoinTable` option.
-  
-  for example if those are your models:
+* **Foreign key constraints not generated correctly** - When setting up your [Go Program](#as-go-file) and using [Customize JoinTable](https://gorm.io/docs/many_to_many.html#Customize-JoinTable), 
+  you may encounter issues with foreign key constraints. To avoid these issues, ensure that all models, including the join tables, are passed to the `Load` function.
+
+  For example if those are your models:
   ```go
   type Person struct {
     ID        int
@@ -269,11 +268,7 @@ The provider supports the following databases:
   
   you should use the following code:
   ```go
-  stmts, err := gormschema.New("mysql",
-    gormschema.WithJoinTable(
-      &Models.Person{}, "Addresses", &Models.PersonAddress{},
-    ),
-  ).Load(&Models.Address{}, &Models.Person{})
+  stmts, err := gormschema.New("mysql").Load(&Models.Address{}, &Models.Person{}, &Models.PersonAddress{})
   ```
 
 ### License
