@@ -216,6 +216,77 @@ The provider supports the following databases:
   ).Load(&Models.Address{}, &Models.Person{})
   ```
 
+* **How to handle enums and custom types?** -
+    The recommended way to handle custom types that are not supported by GORM such as postgres enums is to use [composite schemas](https://atlasgo.io/atlas-schema/projects#data-source-composite_schema). 
+
+    First you need to define your custom type inside state file, lets call it `schema.sql`:
+    ```sql
+    CREATE TYPE "status" AS ENUM ('active', 'inactive', 'deleted');
+    ```
+ 
+  Next, you need to add the custom type to your GORM model using [type field tag](https://gorm.io/docs/models.html#Fields-Tags): 
+  ```diff filename ="models/player.go"
+  package models
+  
+  import (
+  	"gorm.io/gorm"
+  )
+  
+  type Player struct {
+  	gorm.Model
+  	ID      int `gorm:"primaryKey"`
+  +	Status  string `gorm:"type:status"`
+  }
+  
+  ```
+  Next, you need to use schema composed of your GORM schema and `schema.sql` file, you can do it by using the next `atlas.hcl` config file:
+  
+  ```hcl
+  data "external_schema" "gorm" {
+    program = [
+      "go",
+      "run",
+      "-mod=mod",
+      "ariga.io/atlas-provider-gorm",
+      "load",
+      "--path", "./models",
+      "--dialect", "postgres",
+    ]
+  }
+  
+  data "composite_schema" "app" {
+    schema "public" {
+      url = "file://schema.sql"
+    }
+    schema "public" {
+      url = data.external_schema.gorm.url
+    }
+  }
+  
+  env "composed" {
+    src = data.composite_schema.app.url
+    dev = "docker://postgres/15/dev?search_path=public"
+    migration {
+      dir = "file://migrations"
+    }
+    format {
+      migrate {
+        diff = "{{ sql . \"  \" }}"
+      }
+    }
+  }
+  
+  ```
+  Now, when running: `atlas migrate diff --env composed` new migration file should be created, containing the custom enum type:
+  
+  ```sql filename ="20240623142238.sql"
+  -- Create enum type "status"
+  CREATE TYPE "status" AS ENUM ('active', 'inactive', 'deleted');
+  -- Modify "players" table
+  ALTER TABLE "players" ADD COLUMN "status" "status" NULL;
+  ```
+
+
 ### License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
