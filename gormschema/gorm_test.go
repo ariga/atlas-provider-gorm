@@ -20,7 +20,6 @@ func TestSQLiteConfig(t *testing.T) {
 		models.WorkingAgedUsers{},
 		models.Pet{},
 		models.UserPetHistory{},
-		models.User{},
 		ckmodels.Event{},
 		ckmodels.Location{},
 		models.TopPetOwner{},

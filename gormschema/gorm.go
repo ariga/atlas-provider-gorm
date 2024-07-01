@@ -36,6 +36,9 @@ type (
 		isTriggerOption()
 		apply(*schemaBuilder)
 	}
+	Trigger struct {
+		opts []TriggerOption
+	}
 	// ViewDefiner defines a view.
 	ViewDefiner interface {
 		ViewDef(dialect string) []ViewOption
@@ -75,6 +78,10 @@ func New(dialect string, opts ...Option) *Loader {
 		opt(l)
 	}
 	return l
+}
+
+func NewTrigger(opts ...TriggerOption) Trigger {
+	return Trigger{opts: opts}
 }
 
 func (s schemaOption) apply(b *schemaBuilder) {
@@ -364,14 +371,14 @@ func (m *migrator) orderModels(models ...any) ([]any, error) {
 func (m *migrator) CreateTriggers(models []any) error {
 	for _, model := range models {
 		if md, ok := model.(interface {
-			Triggers(string) [][]TriggerOption
+			Triggers(string) []Trigger
 		}); ok {
-			for _, options := range md.Triggers(m.Dialector.Name()) {
+			for _, trigger := range md.Triggers(m.Dialector.Name()) {
 				schemaBuilder := &schemaBuilder{
 					db: m.DB,
 				}
-				for _, option := range options {
-					option.apply(schemaBuilder)
+				for _, opt := range trigger.opts {
+					opt.apply(schemaBuilder)
 					if err := m.DB.Exec(schemaBuilder.createStmt).Error; err != nil {
 						return err
 					}

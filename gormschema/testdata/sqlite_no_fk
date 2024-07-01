@@ -3,6 +3,8 @@ CREATE TABLE `users` (`id` integer,`created_at` datetime,`updated_at` datetime,`
 CREATE INDEX `idx_users_deleted_at` ON `users`(`deleted_at`);
 CREATE TABLE `pets` (`id` integer,`created_at` datetime,`updated_at` datetime,`deleted_at` datetime,`name` text,`user_id` integer,PRIMARY KEY (`id`));
 CREATE INDEX `idx_pets_deleted_at` ON `pets`(`deleted_at`);
+CREATE TABLE `hobbies` (`id` integer,`name` text,PRIMARY KEY (`id`));
+CREATE TABLE `user_hobbies` (`hobby_id` integer,`user_id` integer,PRIMARY KEY (`hobby_id`,`user_id`));
 CREATE TRIGGER trg_insert_user_pet_history
 AFTER INSERT ON pets
 BEGIN

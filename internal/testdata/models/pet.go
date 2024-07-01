@@ -41,7 +41,7 @@ type UserPetHistory struct {
 	CreatedAt time.Time
 }
 
-func (Pet) Triggers(dialect string) [][]gormschema.TriggerOption {
+func (Pet) Triggers(dialect string) []gormschema.Trigger {
 	var stmt1, stmt2 string
 	switch dialect {
 	case "mysql":
@@ -126,8 +126,8 @@ BEGIN
 END`
 	}
 
-	return [][]gormschema.TriggerOption{
-		[]gormschema.TriggerOption{gormschema.CreateStmt(stmt1)},
-		[]gormschema.TriggerOption{gormschema.CreateStmt(stmt2)},
+	return []gormschema.Trigger{
+		gormschema.NewTrigger(gormschema.CreateStmt(stmt1)),
+		gormschema.NewTrigger(gormschema.CreateStmt(stmt2)),
 	}
 }
