@@ -201,7 +201,7 @@ func (WorkingAgedUsers) TableName() string {
 
 > Note: Trigger feature is only available for logged-in users, run `atlas login` if you haven't already. To learn more about logged-in features for Atlas, visit [Feature Availability](https://atlasgo.io/features#database-features).
 
-To attach triggers to a table, use the `Triggers(string)` method as follows:
+To attach triggers to a table, use the `Triggers` method as follows:
 
 ```go
 type Pet struct {
@@ -209,14 +209,14 @@ type Pet struct {
   Name string
 }
 
-func (Pet) Triggers(dialect string) [][]gormschema.TriggerOption {
+func (Pet) Triggers(dialect string) []gormschema.Trigger {
   var stmt string
   switch dialect {
   case "mysql":
     stmt = "CREATE TRIGGER pet_insert BEFORE INSERT ON pets FOR EACH ROW SET NEW.name = UPPER(NEW.name)"
   }
-  return [][]gormschema.TriggerOption{
-    {gormschema.CreateTrigger(stmt)},
+  return []gormschema.Trigger{
+    gormschema.NewTrigger(gormschema.CreateStmt(stmt)),
   }
 }
 ```
