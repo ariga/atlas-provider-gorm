@@ -56,7 +56,7 @@ END`
 BEFORE INSERT ON pets 
 FOR EACH ROW
 BEGIN
-	SET NEW.name = CONCAT(NEW.name, ' ❤️');
+	SET NEW.name = CONCAT(NEW.name, ' <3');
 END`
 	case "sqlite":
 		stmt1 = `CREATE TRIGGER trg_insert_user_pet_history
@@ -68,7 +68,7 @@ END`
 		stmt2 = `CREATE TRIGGER trg_adding_heart_on_pet
 BEFORE INSERT ON pets
 BEGIN
-	UPDATE pets SET name = name || ' ❤️' WHERE id = NEW.id;
+	UPDATE pets SET name = name || ' <3' WHERE id = NEW.id;
 END`
 	case "postgres":
 		stmt1 = `CREATE OR REPLACE FUNCTION log_user_pet_histories()
@@ -87,7 +87,7 @@ EXECUTE FUNCTION log_user_pet_histories();`
 		stmt2 = `CREATE OR REPLACE FUNCTION add_heart_on_pet()
 RETURNS TRIGGER AS $$
 BEGIN
-	NEW.name := NEW.name || ' ❤️';
+	NEW.name := NEW.name || ' <3';
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -119,7 +119,7 @@ AS
 BEGIN
 	INSERT INTO pets (name, user_id)
 	SELECT
-		CONCAT(inserted.name, ' ❤️'),
+		CONCAT(inserted.name, ' <3'),
 		inserted.user_id
 	FROM
 		inserted;

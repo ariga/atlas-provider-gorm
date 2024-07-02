@@ -11,7 +11,7 @@ CREATE TRIGGER "trg_insert_user_pet_history" AFTER INSERT ON "public"."pets" FOR
 -- Create "add_heart_on_pet" function
 CREATE FUNCTION "public"."add_heart_on_pet" () RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
-	NEW.name := NEW.name || ' ❤️';
+	NEW.name := NEW.name || ' <3';
 	RETURN NEW;
 END;
 $$;

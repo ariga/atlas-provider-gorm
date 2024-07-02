@@ -5,7 +5,7 @@ CREATE TRIGGER `trg_insert_user_pet_history` AFTER INSERT ON `pets` FOR EACH ROW
 END;
 -- Create trigger "trg_adding_heart_on_pet"
 CREATE TRIGGER `trg_adding_heart_on_pet` BEFORE INSERT ON `pets` FOR EACH ROW BEGIN
-	UPDATE pets SET name = name || ' ❤️' WHERE id = NEW.id;
+	UPDATE pets SET name = name || ' <3' WHERE id = NEW.id;
 -- Create "user_pet_histories" table
 CREATE TABLE `user_pet_histories` (
   `user_id` integer NULL,

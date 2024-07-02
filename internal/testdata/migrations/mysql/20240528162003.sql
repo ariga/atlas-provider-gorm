@@ -1,6 +1,6 @@
 -- Create trigger "trg_adding_heart_on_pet"
 CREATE TRIGGER `trg_adding_heart_on_pet` BEFORE INSERT ON `pets` FOR EACH ROW BEGIN
-	SET NEW.name = CONCAT(NEW.name, ' ❤️');
+	SET NEW.name = CONCAT(NEW.name, ' <3');
 END;
 -- Create trigger "trg_insert_user_pet_history"
 CREATE TRIGGER `trg_insert_user_pet_history` AFTER INSERT ON `pets` FOR EACH ROW BEGIN

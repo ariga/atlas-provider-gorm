@@ -27,7 +27,7 @@ EXECUTE FUNCTION log_user_pet_histories();;
 CREATE OR REPLACE FUNCTION add_heart_on_pet()
 RETURNS TRIGGER AS $$
 BEGIN
-	NEW.name := NEW.name || ' ❤️';
+	NEW.name := NEW.name || ' <3';
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

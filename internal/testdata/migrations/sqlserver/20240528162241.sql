@@ -14,7 +14,7 @@ END;;
 CREATE TRIGGER [trg_adding_heart_on_pet] ON [pets] INSTEAD OF INSERT AS BEGIN
 	INSERT INTO pets (name, user_id)
 	SELECT
-		CONCAT(inserted.name, ' ❤️'),
+		CONCAT(inserted.name, ' <3'),
 		inserted.user_id
 	FROM
 		inserted;

@@ -18,7 +18,7 @@ CREATE TRIGGER trg_adding_heart_on_pet
 BEFORE INSERT ON pets 
 FOR EACH ROW
 BEGIN
-	SET NEW.name = CONCAT(NEW.name, ' ❤️');
+	SET NEW.name = CONCAT(NEW.name, ' <3');
 END;
 ALTER TABLE `events` ADD CONSTRAINT `fk_locations_event` FOREIGN KEY (`locationId`) REFERENCES `locations`(`locationId`);
 ALTER TABLE `locations` ADD CONSTRAINT `fk_events_location` FOREIGN KEY (`eventId`) REFERENCES `events`(`eventId`);
