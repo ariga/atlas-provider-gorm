@@ -136,6 +136,7 @@ env "gorm" {
 > Note: Views are available for logged-in users, run `atlas login` if you haven't already. To learn more about logged-in features for Atlas, visit [Feature Availability](https://atlasgo.io/features#database-features).
 
 To define a Go struct as a database `VIEW`, implement the `ViewDef` method as follow:
+
 ```go
 // User is a regular gorm.Model stored in the "users" table.
 type User struct {
@@ -158,7 +159,9 @@ func (WorkingAgedUsers) ViewDef(dialect string) []gormschema.ViewOption {
   }
 }
 ```
+
 In order to pass a plain `CREATE VIEW` statement, use the `CreateStmt` as follows:
+
 ```go
 type BotlTracker struct {
   ID   uint
@@ -176,19 +179,48 @@ func (BotlTracker) ViewDef(dialect string) []gormschema.ViewOption {
   }
 }
 ```
+
 To include both VIEWs and TABLEs in the migration generation, pass all models to the `Load` function:
+
 ```go
 stmts, err := gormschema.New("mysql").Load(
   &models.User{},			// Table-based model.
   &models.WorkingAgedUsers{},	// View-based model.
 )
 ```
+
 The view-based model works just like a regular models in GORM queries. However, make sure the view name is identical to the struct name, and in case they are differ, configure the name using the `TableName` method:
+
 ```go
 func (WorkingAgedUsers) TableName() string {
   return "working_aged_users_custom_name" // View name is different than pluralized struct name.
 }
 ```
+
+#### Trigger
+
+> Note: Trigger feature is only available for logged-in users, run `atlas login` if you haven't already. To learn more about logged-in features for Atlas, visit [Feature Availability](https://atlasgo.io/features#database-features).
+
+To attach triggers to a table, use the `Triggers` method as follows:
+
+```go
+type Pet struct {
+  gorm.Model
+  Name string
+}
+
+func (Pet) Triggers(dialect string) []gormschema.Trigger {
+  var stmt string
+  switch dialect {
+  case "mysql":
+    stmt = "CREATE TRIGGER pet_insert BEFORE INSERT ON pets FOR EACH ROW SET NEW.name = UPPER(NEW.name)"
+  }
+  return []gormschema.Trigger{
+    gormschema.NewTrigger(gormschema.CreateStmt(stmt)),
+  }
+}
+```
+
 ### Additional Configuration
 
 To supply custom `gorm.Config{}` object to the provider use the [Go Program Mode](#as-go-file) with

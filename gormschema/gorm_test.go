@@ -16,14 +16,21 @@ import (
 func TestSQLiteConfig(t *testing.T) {
 	resetSession()
 	l := gormschema.New("sqlite")
-	sql, err := l.Load(models.WorkingAgedUsers{}, models.Pet{}, ckmodels.Event{}, ckmodels.Location{}, models.TopPetOwner{})
+	sql, err := l.Load(
+		models.WorkingAgedUsers{},
+		models.Pet{},
+		models.UserPetHistory{},
+		ckmodels.Event{},
+		ckmodels.Location{},
+		models.TopPetOwner{},
+	)
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/sqlite_default")
 	resetSession()
 	l = gormschema.New("sqlite", gormschema.WithConfig(&gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 	}))
-	sql, err = l.Load(models.Pet{}, models.User{})
+	sql, err = l.Load(models.UserPetHistory{}, models.Pet{}, models.User{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/sqlite_no_fk")
 	resetSession()
@@ -32,7 +39,15 @@ func TestSQLiteConfig(t *testing.T) {
 func TestPostgreSQLConfig(t *testing.T) {
 	resetSession()
 	l := gormschema.New("postgres")
-	sql, err := l.Load(models.WorkingAgedUsers{}, ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{}, models.TopPetOwner{})
+	sql, err := l.Load(
+		models.WorkingAgedUsers{},
+		ckmodels.Location{},
+		ckmodels.Event{},
+		models.UserPetHistory{},
+		models.User{},
+		models.Pet{},
+		models.TopPetOwner{},
+	)
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/postgresql_default")
 	resetSession()
@@ -48,7 +63,15 @@ func TestPostgreSQLConfig(t *testing.T) {
 func TestMySQLConfig(t *testing.T) {
 	resetSession()
 	l := gormschema.New("mysql")
-	sql, err := l.Load(models.WorkingAgedUsers{}, ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{}, models.TopPetOwner{})
+	sql, err := l.Load(
+		models.WorkingAgedUsers{},
+		ckmodels.Location{},
+		ckmodels.Event{},
+		models.UserPetHistory{},
+		models.User{},
+		models.Pet{},
+		models.TopPetOwner{},
+	)
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_default")
 	resetSession()
@@ -80,7 +103,15 @@ func TestMySQLConfig(t *testing.T) {
 func TestSQLServerConfig(t *testing.T) {
 	resetSession()
 	l := gormschema.New("sqlserver")
-	sql, err := l.Load(models.WorkingAgedUsers{}, ckmodels.Location{}, ckmodels.Event{}, models.User{}, models.Pet{}, models.TopPetOwner{})
+	sql, err := l.Load(
+		models.WorkingAgedUsers{},
+		ckmodels.Location{},
+		ckmodels.Event{},
+		models.UserPetHistory{},
+		models.User{},
+		models.Pet{},
+		models.TopPetOwner{},
+	)
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/sqlserver_default")
 	resetSession()
