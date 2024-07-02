@@ -36,6 +36,7 @@ type (
 		isTriggerOption()
 		apply(*schemaBuilder)
 	}
+	// Trigger defines a trigger.
 	Trigger struct {
 		opts []TriggerOption
 	}
@@ -80,6 +81,7 @@ func New(dialect string, opts ...Option) *Loader {
 	return l
 }
 
+// NewTrigger receives a list of TriggerOption to build a Trigger.
 func NewTrigger(opts ...TriggerOption) Trigger {
 	return Trigger{opts: opts}
 }
