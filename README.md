@@ -129,6 +129,15 @@ env "gorm" {
 }
 ```
 
+### Examples
+
+- [Composite Types](https://atlasgo.io/guides/orms/gorm/composite-types)
+- [Domain Types](https://atlasgo.io/guides/orms/gorm/domain-types)
+- [Enum Types](https://atlasgo.io/guides/orms/gorm/enum-types)
+- [Extensions](https://atlasgo.io/guides/orms/gorm/extensions)
+- [Row-Level Security (RLS)](https://atlasgo.io/guides/orms/gorm/row-level-security)
+- [Triggers](https://atlasgo.io/guides/orms/gorm/triggers)
+
 ### Extra Features
 
 #### Views
