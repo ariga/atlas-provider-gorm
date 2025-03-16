@@ -1,6 +1,6 @@
-CREATE TABLE `users` (`id` integer,`created_at` datetime,`updated_at` datetime,`deleted_at` datetime,`name` text,`age` integer,PRIMARY KEY (`id`));
+CREATE TABLE `users` (`id` integer PRIMARY KEY AUTOINCREMENT,`created_at` datetime,`updated_at` datetime,`deleted_at` datetime,`name` text,`age` integer);
 CREATE INDEX `idx_users_deleted_at` ON `users`(`deleted_at`);
-CREATE TABLE `pets` (`id` integer,`created_at` datetime,`updated_at` datetime,`deleted_at` datetime,`name` text,`user_id` integer,PRIMARY KEY (`id`),CONSTRAINT `fk_users_pets` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`));
+CREATE TABLE `pets` (`id` integer PRIMARY KEY AUTOINCREMENT,`created_at` datetime,`updated_at` datetime,`deleted_at` datetime,`name` text,`user_id` integer,CONSTRAINT `fk_users_pets` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`));
 CREATE INDEX `idx_pets_deleted_at` ON `pets`(`deleted_at`);
 CREATE TABLE `user_pet_histories` (`user_id` integer,`pet_id` integer,`created_at` datetime,PRIMARY KEY (`user_id`,`pet_id`));
 CREATE TABLE `locations` (`locationId` text,`eventId` text,PRIMARY KEY (`locationId`),CONSTRAINT `fk_events_location` FOREIGN KEY (`eventId`) REFERENCES `events`(`eventId`));
