@@ -8,7 +8,7 @@ jobs:
   golangci-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
         with:
           go-version-file: 'go.mod'
@@ -30,7 +30,7 @@ jobs:
     strategy:
       matrix:
         dialect: [mysql, postgres, sqlite, sqlserver]
-        go: ['1.21', '1.22']
+        go: ['1.23', '1.24']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -46,7 +46,8 @@ jobs:
           atlas migrate diff --env gorm --var dialect=${{ matrix.dialect }}
         env:
           ATLAS_TOKEN: ${{ secrets.ATLAS_TOKEN }}
-      - working-directory: internal/testdata/circularfks
+      - name: Migrate Diff Circular Foreign keys
+        working-directory: internal/testdata/circularfks
         run: |
           atlas migrate diff --env gorm --var dialect=${{ matrix.dialect }}
         env:
