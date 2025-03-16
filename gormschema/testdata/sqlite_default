@@ -2,9 +2,21 @@ CREATE TABLE `users` (`id` integer PRIMARY KEY AUTOINCREMENT,`created_at` dateti
 CREATE INDEX `idx_users_deleted_at` ON `users`(`deleted_at`);
 CREATE TABLE `pets` (`id` integer PRIMARY KEY AUTOINCREMENT,`created_at` datetime,`updated_at` datetime,`deleted_at` datetime,`name` text,`user_id` integer,CONSTRAINT `fk_users_pets` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`));
 CREATE INDEX `idx_pets_deleted_at` ON `pets`(`deleted_at`);
+CREATE TABLE `user_pet_histories` (`user_id` integer,`pet_id` integer,`created_at` datetime,PRIMARY KEY (`user_id`,`pet_id`));
 CREATE TABLE `locations` (`locationId` text,`eventId` text,PRIMARY KEY (`locationId`),CONSTRAINT `fk_events_location` FOREIGN KEY (`eventId`) REFERENCES `events`(`eventId`));
 CREATE UNIQUE INDEX `idx_locations_event_id` ON `locations`(`eventId`);
 CREATE TABLE `events` (`eventId` text,`locationId` text,PRIMARY KEY (`eventId`),CONSTRAINT `fk_locations_event` FOREIGN KEY (`locationId`) REFERENCES `locations`(`locationId`));
 CREATE UNIQUE INDEX `idx_events_location_id` ON `events`(`locationId`);
 CREATE VIEW working_aged_users AS SELECT name, age FROM `users` WHERE age BETWEEN 18 AND 65;
 CREATE VIEW top_pet_owners AS SELECT user_id, COUNT(id) AS pet_count FROM pets GROUP BY user_id ORDER BY pet_count DESC LIMIT 10;
+CREATE TRIGGER trg_insert_user_pet_history
+AFTER INSERT ON pets
+BEGIN
+	INSERT INTO user_pet_histories (user_id, pet_id, created_at)
+	VALUES (NEW.user_id, NEW.id, datetime('now'));
+END;
+CREATE TRIGGER trg_adding_heart_on_pet
+BEFORE INSERT ON pets
+BEGIN
+	UPDATE pets SET name = name || ' <3' WHERE id = NEW.id;
+END;

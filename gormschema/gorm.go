@@ -17,15 +17,6 @@ import (
 	gormig "gorm.io/gorm/migrator"
 )
 
-// New returns a new Loader.
-func New(dialect string, opts ...Option) *Loader {
-	l := &Loader{dialect: dialect, config: &gorm.Config{}}
-	for _, opt := range opts {
-		opt(l)
-	}
-	return l
-}
-
 type (
 	// Loader is a Loader for gorm schema.
 	Loader struct {
@@ -35,6 +26,33 @@ type (
 	}
 	// Option configures the Loader.
 	Option func(*Loader)
+	// ViewOption implemented by VIEW's related options
+	ViewOption interface {
+		isViewOption()
+		apply(*schemaBuilder)
+	}
+	// TriggerOption implemented by TRIGGER's related options
+	TriggerOption interface {
+		isTriggerOption()
+		apply(*schemaBuilder)
+	}
+	// Trigger defines a trigger.
+	Trigger struct {
+		opts []TriggerOption
+	}
+	// ViewDefiner defines a view.
+	ViewDefiner interface {
+		ViewDef(dialect string) []ViewOption
+	}
+	// schemaOption configures the schemaBuilder.
+	schemaOption  func(*schemaBuilder)
+	schemaBuilder struct {
+		db         *gorm.DB
+		createStmt string
+		// viewName is only used for the BuildStmt option.
+		// BuildStmt returns only a subquery; viewName helps to create a full CREATE VIEW statement.
+		viewName string
+	}
 )
 
 // WithConfig sets the gorm config.
@@ -42,6 +60,60 @@ func WithConfig(cfg *gorm.Config) Option {
 	return func(l *Loader) {
 		l.config = cfg
 	}
+}
+
+// WithJoinTable sets up a join table for the given model and field.
+// Deprecated: put the join tables alongside the models in the Load call.
+func WithJoinTable(model any, field string, jointable any) Option {
+	return func(l *Loader) {
+		l.beforeAutoMigrate = append(l.beforeAutoMigrate, func(db *gorm.DB) error {
+			return db.SetupJoinTable(model, field, jointable)
+		})
+	}
+}
+
+// New returns a new Loader.
+func New(dialect string, opts ...Option) *Loader {
+	l := &Loader{dialect: dialect, config: &gorm.Config{}}
+	for _, opt := range opts {
+		opt(l)
+	}
+	return l
+}
+
+// NewTrigger receives a list of TriggerOption to build a Trigger.
+func NewTrigger(opts ...TriggerOption) Trigger {
+	return Trigger{opts: opts}
+}
+
+func (s schemaOption) apply(b *schemaBuilder) {
+	s(b)
+}
+
+func (schemaOption) isViewOption()    {}
+func (schemaOption) isTriggerOption() {}
+
+// CreateStmt accepts raw SQL to create a view or trigger
+func CreateStmt(stmt string) interface {
+	ViewOption
+	TriggerOption
+} {
+	return schemaOption(func(b *schemaBuilder) {
+		b.createStmt = stmt
+	})
+}
+
+// BuildStmt accepts a function with gorm query builder to create a CREATE VIEW statement.
+// With this option, the view's name will be the same as the model's table name
+func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOption {
+	return schemaOption(func(b *schemaBuilder) {
+		vd := b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			return fn(tx).
+				Unscoped(). // Skip gorm deleted_at filtering.
+				Find(nil)   // Execute the query and convert it to SQL.
+		})
+		b.createStmt = fmt.Sprintf("CREATE VIEW %s AS %s", b.viewName, vd)
+	})
 }
 
 // Load loads the models and returns the DDL statements representing the schema.
@@ -123,6 +195,9 @@ func (l *Loader) Load(models ...any) (string, error) {
 		return "", err
 	}
 	if err = cm.CreateViews(views); err != nil {
+		return "", err
+	}
+	if err = cm.CreateTriggers(models); err != nil {
 		return "", err
 	}
 	if !l.config.DisableForeignKeyConstraintWhenMigrating && l.dialect != "sqlite" {
@@ -242,73 +317,18 @@ func (m *migrator) CreateViews(views []ViewDefiner) error {
 		}); ok {
 			viewName = namer.TableName()
 		}
-		viewBuilder := &viewBuilder{
+		schemaBuilder := &schemaBuilder{
 			db:       m.DB,
 			viewName: viewName,
 		}
 		for _, opt := range view.ViewDef(m.Dialector.Name()) {
-			opt(viewBuilder)
+			opt.apply(schemaBuilder)
 		}
-		if err := m.DB.Exec(viewBuilder.createStmt).Error; err != nil {
+		if err := m.DB.Exec(schemaBuilder.createStmt).Error; err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-// WithJoinTable sets up a join table for the given model and field.
-// Deprecated: put the join tables alongside the models in the Load call.
-func WithJoinTable(model any, field string, jointable any) Option {
-	return func(l *Loader) {
-		l.beforeAutoMigrate = append(l.beforeAutoMigrate, func(db *gorm.DB) error {
-			return db.SetupJoinTable(model, field, jointable)
-		})
-	}
-}
-
-func indirect(t reflect.Type) reflect.Type {
-	for t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-	return t
-}
-
-type (
-	// ViewOption configures a viewBuilder.
-	ViewOption func(*viewBuilder)
-	// ViewDefiner defines a view.
-	ViewDefiner interface {
-		ViewDef(dialect string) []ViewOption
-	}
-	viewBuilder struct {
-		db         *gorm.DB
-		createStmt string
-		// viewName is only used for the BuildStmt option.
-		// BuildStmt returns only a subquery; viewName helps to create a full CREATE VIEW statement.
-		viewName string
-	}
-)
-
-// CreateStmt accepts raw SQL to create a CREATE VIEW statement.
-func CreateStmt(stmt string) ViewOption {
-	return func(b *viewBuilder) {
-		b.createStmt = b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
-			return tx.Exec(stmt)
-		})
-	}
-}
-
-// BuildStmt accepts a function with gorm query builder to create a CREATE VIEW statement.
-// With this option, the view's name will be the same as the model's table name
-func BuildStmt(fn func(db *gorm.DB) *gorm.DB) ViewOption {
-	return func(b *viewBuilder) {
-		vd := b.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
-			return fn(tx).
-				Unscoped(). // Skip gorm deleted_at filtering.
-				Find(nil)   // Execute the query and convert it to SQL.
-		})
-		b.createStmt = fmt.Sprintf("CREATE VIEW %s AS %s", b.viewName, vd)
-	}
 }
 
 // orderModels places join tables at the end of the list of models (if any),
@@ -347,4 +367,33 @@ func (m *migrator) orderModels(models ...any) ([]any, error) {
 		}
 	}
 	return append(otherTables, joinTables...), nil
+}
+
+// CreateTriggers creates the triggers for the given models.
+func (m *migrator) CreateTriggers(models []any) error {
+	for _, model := range models {
+		if md, ok := model.(interface {
+			Triggers(string) []Trigger
+		}); ok {
+			for _, trigger := range md.Triggers(m.Dialector.Name()) {
+				schemaBuilder := &schemaBuilder{
+					db: m.DB,
+				}
+				for _, opt := range trigger.opts {
+					opt.apply(schemaBuilder)
+					if err := m.DB.Exec(schemaBuilder.createStmt).Error; err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func indirect(t reflect.Type) reflect.Type {
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t
 }
