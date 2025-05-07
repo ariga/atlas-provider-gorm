@@ -9,11 +9,24 @@ import (
 		"{{ . }}"
 	{{- end}}
 	"ariga.io/atlas-provider-gorm/gormschema"
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 	_ "ariga.io/atlas-go-sdk/recordriver"
 )
 
 func main() {
-	stmts, err := gormschema.New("{{ .Dialect }}").Load(
+	var options []gormschema.Option
+
+	{{- if .Singular }}
+	config := &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			SingularTable: true, // Use singular table names
+		},
+	}
+	options = append(options, gormschema.WithConfig(config))
+	{{- end }}
+
+	stmts, err := gormschema.New("{{ .Dialect }}", options...).Load(
 		{{- range .Models }}
 			&{{ .PkgName }}.{{ .Name }}{},
 		{{- end }}

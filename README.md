@@ -4,7 +4,7 @@ Load [GORM](https://gorm.io/) schemas into an [Atlas](https://atlasgo.io) projec
 
 ### Use-cases
 1. **Declarative migrations** - use a Terraform-like `atlas schema apply --env gorm` to apply your GORM schema to the database.
-2. **Automatic migration planning** - use `atlas migrate diff --env gorm` to automatically plan a migration from  
+2. **Automatic migration planning** - use `atlas migrate diff --env gorm` to automatically plan a migration from
   the current database version to the GORM schema.
 
 ### Installation
@@ -18,11 +18,11 @@ See [atlasgo.io](https://atlasgo.io/getting-started#installation) for more insta
 Install the provider by running:
 ```bash
 go get -u ariga.io/atlas-provider-gorm
-``` 
+```
 
-#### Standalone 
+#### Standalone
 
-If all of your GORM models and [views](#views) exist in a single package, and the models either embed `gorm.Model` or contain `gorm` struct tags, 
+If all of your GORM models and [views](#views) exist in a single package, and the models either embed `gorm.Model` or contain `gorm` struct tags,
 you can use the provider directly to load your GORM schema into Atlas.
 
 In your project directory, create a new file named `atlas.hcl` with the following contents:
@@ -53,6 +53,27 @@ env "gorm" {
   }
 }
 ```
+
+#### Using Singular Table Names
+
+By default, GORM uses pluralized table names (e.g., a `User` model becomes a `users` table). If you want to use singular table names instead, use the `--singular` flag:
+
+```hcl
+data "external_schema" "gorm" {
+  program = [
+    "go",
+    "run",
+    "-mod=mod",
+    "ariga.io/atlas-provider-gorm",
+    "load",
+    "--path", "./path/to/models",
+    "--dialect", "mysql",
+    "--singular" // Enable singular table names
+  ]
+}
+```
+
+This will make GORM use the singular form for table names (e.g., a `User` model becomes a `user` table).
 
 ##### Pinning Go dependencies
 
@@ -264,13 +285,13 @@ target database.
 
 #### Diff
 
-Atlas supports a [versioned migration](https://atlasgo.io/concepts/declarative-vs-versioned#versioned-migrations) 
+Atlas supports a [versioned migration](https://atlasgo.io/concepts/declarative-vs-versioned#versioned-migrations)
 workflow, where each change to the database is versioned and recorded in a migration file. You can use the
 `atlas migrate diff` command to automatically generate a migration file that will migrate the database
 from its latest revision to the current GORM schema.
 
 ```bash
-atlas migrate diff --env gorm 
+atlas migrate diff --env gorm
 ```
 
 ### Supported Databases
@@ -283,7 +304,7 @@ The provider supports the following databases:
 
 ### Frequently Asked Questions
 
-* **Foreign key constraints not generated correctly** - When setting up your [Go Program](#as-go-file) and using [Customize JoinTable](https://gorm.io/docs/many_to_many.html#Customize-JoinTable), 
+* **Foreign key constraints not generated correctly** - When setting up your [Go Program](#as-go-file) and using [Customize JoinTable](https://gorm.io/docs/many_to_many.html#Customize-JoinTable),
   you may encounter issues with foreign key constraints. To avoid these issues, ensure that all models, including the join tables, are passed to the `Load` function.
 
   For example if those are your models:
@@ -293,12 +314,12 @@ The provider supports the following databases:
     Name      string
     Addresses []Address `gorm:"many2many:person_addresses;"`
   }
-  
+
   type Address struct {
     ID   int
     Name string
   }
-  
+
   type PersonAddress struct {
     PersonID  int `gorm:"primaryKey"`
     AddressID int `gorm:"primaryKey"`
@@ -306,37 +327,37 @@ The provider supports the following databases:
     DeletedAt gorm.DeletedAt
   }
   ```
-  
+
   you should use the following code:
   ```go
   stmts, err := gormschema.New("mysql").Load(&Models.Address{}, &Models.Person{}, &Models.PersonAddress{})
   ```
 
 * **How to handle enums and custom types?** -
-    The recommended way to handle custom types that are not supported by GORM such as postgres enums is to use [composite schemas](https://atlasgo.io/atlas-schema/projects#data-source-composite_schema). 
+    The recommended way to handle custom types that are not supported by GORM such as postgres enums is to use [composite schemas](https://atlasgo.io/atlas-schema/projects#data-source-composite_schema).
 
     First you need to define your custom type inside state file, lets call it `schema.sql`:
     ```sql
     CREATE TYPE "status" AS ENUM ('active', 'inactive', 'deleted');
     ```
- 
-  Next, you need to add the custom type to your GORM model using [type field tag](https://gorm.io/docs/models.html#Fields-Tags): 
+
+  Next, you need to add the custom type to your GORM model using [type field tag](https://gorm.io/docs/models.html#Fields-Tags):
   ```diff filename ="models/player.go"
   package models
-  
+
   import (
   	"gorm.io/gorm"
   )
-  
+
   type Player struct {
   	gorm.Model
   	ID      int `gorm:"primaryKey"`
   +	Status  string `gorm:"type:status"`
   }
-  
+
   ```
   Next, you need to use schema composed of your GORM schema and `schema.sql` file, you can do it by using the next `atlas.hcl` config file:
-  
+
   ```hcl
   data "external_schema" "gorm" {
     program = [
@@ -349,7 +370,7 @@ The provider supports the following databases:
       "--dialect", "postgres",
     ]
   }
-  
+
   data "composite_schema" "app" {
     schema "public" {
       url = "file://schema.sql"
@@ -358,7 +379,7 @@ The provider supports the following databases:
       url = data.external_schema.gorm.url
     }
   }
-  
+
   env "composed" {
     src = data.composite_schema.app.url
     dev = "docker://postgres/15/dev?search_path=public"
@@ -371,10 +392,10 @@ The provider supports the following databases:
       }
     }
   }
-  
+
   ```
   Now, when running: `atlas migrate diff --env composed` new migration file should be created, containing the custom enum type:
-  
+
   ```sql filename ="20240623142238.sql"
   -- Create enum type "status"
   CREATE TYPE "status" AS ENUM ('active', 'inactive', 'deleted');

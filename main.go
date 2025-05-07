@@ -42,10 +42,11 @@ func main() {
 
 // LoadCmd is a command to load models
 type LoadCmd struct {
-	Path    string   `help:"path to schema package" required:""`
-	Models  []string `help:"Models to load"`
-	Dialect string   `help:"dialect to use" enum:"mysql,sqlite,postgres,sqlserver" required:""`
-	out     io.Writer
+	Path     string   `help:"path to schema package" required:""`
+	Models   []string `help:"Models to load"`
+	Dialect  string   `help:"dialect to use" enum:"mysql,sqlite,postgres,sqlserver" required:""`
+	Singular bool     `help:"use singular table names instead of plural" default:"false"`
+	out      io.Writer
 }
 
 var viewDefiner = reflect.TypeOf((*gormschema.ViewDefiner)(nil)).Elem()
@@ -70,8 +71,9 @@ func (c *LoadCmd) Run() error {
 			Underlying().(*types.Interface))
 	}
 	p := Payload{
-		Models:  models,
-		Dialect: c.Dialect,
+		Models:   models,
+		Dialect:  c.Dialect,
+		Singular: c.Singular,
 	}
 	var buf bytes.Buffer
 	if err := loaderTmpl.Execute(&buf, p); err != nil {
@@ -97,7 +99,7 @@ func runprog(src []byte) (string, error) {
 		return "", err
 	}
 	target := fmt.Sprintf(".gormschema/%s.go", filename("gorm"))
-	if err := os.WriteFile(target, src, 0644); err != nil {
+	if err := os.WriteFile(target, src, 0o644); err != nil {
 		return "", fmt.Errorf("gormschema: write file %s: %w", target, err)
 	}
 	defer os.RemoveAll(".gormschema")
@@ -134,8 +136,9 @@ func filename(pkg string) string {
 }
 
 type Payload struct {
-	Models  []model
-	Dialect string
+	Models   []model
+	Dialect  string
+	Singular bool
 }
 
 func (p Payload) Imports() []string {
