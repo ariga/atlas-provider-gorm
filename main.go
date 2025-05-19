@@ -52,11 +52,13 @@ type LoadCmd struct {
 var viewDefiner = reflect.TypeOf((*gormschema.ViewDefiner)(nil)).Elem()
 
 func (c *LoadCmd) Run() error {
-	cfg := &packages.Config{
-		Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedModule | packages.NeedDeps,
-	}
+	var (
+		tags string
+		cfg  = &packages.Config{
+			Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedModule | packages.NeedDeps,
+		}
+	)
 
-	tags := ""
 	if c.BuildTags != "" {
 		tags = "-tags=" + c.BuildTags
 		cfg.BuildFlags = []string{tags}

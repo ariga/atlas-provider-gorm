@@ -59,29 +59,29 @@ func TestCustomizeTablesLoad(t *testing.T) {
 	require.Equal(t, string(expected), string(actual))
 }
 
-func TestTaggedModels(t *testing.T) {
+func TestBuildTags(t *testing.T) {
 	var buf bytes.Buffer
 	cmd := &LoadCmd{
-		Path:      "./internal/testdata/taggedmodels",
+		Path:      "./internal/testdata/buildtags",
 		Dialect:   "mysql",
-		BuildTags: "tag",
+		BuildTags: "buildtag",
 		out:       &buf,
 	}
 	err := cmd.Run()
 	require.NoError(t, err)
-	require.Contains(t, buf.String(), "CREATE TABLE `non_tagged_models`")
+	require.Contains(t, buf.String(), "CREATE TABLE `un_tagged_models`")
 	require.Contains(t, buf.String(), "CREATE TABLE `tagged_models`")
 }
 
-func TestNonTaggedModels(t *testing.T) {
+func TestNonBuildTags(t *testing.T) {
 	var buf bytes.Buffer
 	cmd := &LoadCmd{
-		Path:    "./internal/testdata/taggedmodels",
+		Path:    "./internal/testdata/buildtags",
 		Dialect: "mysql",
 		out:     &buf,
 	}
 	err := cmd.Run()
 	require.NoError(t, err)
-	require.Contains(t, buf.String(), "CREATE TABLE `non_tagged_models`")
+	require.Contains(t, buf.String(), "CREATE TABLE `un_tagged_models`")
 	require.NotContains(t, buf.String(), "CREATE TABLE `tagged_models`")
 }

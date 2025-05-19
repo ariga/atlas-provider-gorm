@@ -1,7 +1,7 @@
-//go:build tag
-// +build tag
+//go:build buildtag
+// +build buildtag
 
-package taggedmodels
+package buildtags
 
 type TaggedModel struct {
 	ID int `gorm:"primaryKey"`
