@@ -1,5 +1,5 @@
 package buildtags
 
-type UnTaggedModel struct {
+type UntaggedModel struct {
 	ID int `gorm:"primaryKey"`
 }

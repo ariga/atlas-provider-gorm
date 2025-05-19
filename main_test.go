@@ -69,7 +69,7 @@ func TestBuildTags(t *testing.T) {
 	}
 	err := cmd.Run()
 	require.NoError(t, err)
-	require.Contains(t, buf.String(), "CREATE TABLE `un_tagged_models`")
+	require.Contains(t, buf.String(), "CREATE TABLE `untagged_models`")
 	require.Contains(t, buf.String(), "CREATE TABLE `tagged_models`")
 }
 
@@ -82,6 +82,6 @@ func TestNonBuildTags(t *testing.T) {
 	}
 	err := cmd.Run()
 	require.NoError(t, err)
-	require.Contains(t, buf.String(), "CREATE TABLE `un_tagged_models`")
+	require.Contains(t, buf.String(), "CREATE TABLE `untagged_models`")
 	require.NotContains(t, buf.String(), "CREATE TABLE `tagged_models`")
 }
