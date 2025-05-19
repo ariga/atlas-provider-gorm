@@ -37,6 +37,7 @@ data "external_schema" "gorm" {
     "load",
     "--path", "./path/to/models",
     "--dialect", "mysql", // | postgres | sqlite | sqlserver
+    "--build-tags", "" // this is optional in case some models are in tagged packages
   ]
 }
 
