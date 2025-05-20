@@ -58,3 +58,30 @@ func TestCustomizeTablesLoad(t *testing.T) {
 	actual := bytes.TrimSuffix(buf.Bytes(), []byte("\n"))
 	require.Equal(t, string(expected), string(actual))
 }
+
+func TestBuildTags(t *testing.T) {
+	var buf bytes.Buffer
+	cmd := &LoadCmd{
+		Path:      "./internal/testdata/buildtags",
+		Dialect:   "mysql",
+		BuildTags: "buildtag",
+		out:       &buf,
+	}
+	err := cmd.Run()
+	require.NoError(t, err)
+	require.Contains(t, buf.String(), "CREATE TABLE `untagged_models`")
+	require.Contains(t, buf.String(), "CREATE TABLE `tagged_models`")
+}
+
+func TestNonBuildTags(t *testing.T) {
+	var buf bytes.Buffer
+	cmd := &LoadCmd{
+		Path:    "./internal/testdata/buildtags",
+		Dialect: "mysql",
+		out:     &buf,
+	}
+	err := cmd.Run()
+	require.NoError(t, err)
+	require.Contains(t, buf.String(), "CREATE TABLE `untagged_models`")
+	require.NotContains(t, buf.String(), "CREATE TABLE `tagged_models`")
+}

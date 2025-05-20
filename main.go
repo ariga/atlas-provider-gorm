@@ -42,10 +42,11 @@ func main() {
 
 // LoadCmd is a command to load models
 type LoadCmd struct {
-	Path    string   `help:"path to schema package" required:""`
-	Models  []string `help:"Models to load"`
-	Dialect string   `help:"dialect to use" enum:"mysql,sqlite,postgres,sqlserver" required:""`
-	out     io.Writer
+	Path      string   `help:"path to schema package" required:""`
+	BuildTags string   `help:"build tags to use" default:""`
+	Models    []string `help:"Models to load"`
+	Dialect   string   `help:"dialect to use" enum:"mysql,sqlite,postgres,sqlserver" required:""`
+	out       io.Writer
 }
 
 var viewDefiner = reflect.TypeOf((*gormschema.ViewDefiner)(nil)).Elem()
@@ -53,6 +54,9 @@ var viewDefiner = reflect.TypeOf((*gormschema.ViewDefiner)(nil)).Elem()
 func (c *LoadCmd) Run() error {
 	cfg := &packages.Config{
 		Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedModule | packages.NeedDeps,
+	}
+	if c.BuildTags != "" {
+		cfg.BuildFlags = []string{"-tags=" + c.BuildTags}
 	}
 	var models []model
 	switch pkgs, err := packages.Load(cfg, c.Path, viewDefiner.PkgPath()); {
@@ -81,7 +85,7 @@ func (c *LoadCmd) Run() error {
 	if err != nil {
 		return err
 	}
-	s, err := runprog(source)
+	s, err := runprog(source, c.BuildTags)
 	if err != nil {
 		return err
 	}
@@ -92,7 +96,7 @@ func (c *LoadCmd) Run() error {
 	return err
 }
 
-func runprog(src []byte) (string, error) {
+func runprog(src []byte, tags string) (string, error) {
 	if err := os.MkdirAll(".gormschema", os.ModePerm); err != nil {
 		return "", err
 	}
@@ -101,12 +105,12 @@ func runprog(src []byte) (string, error) {
 		return "", fmt.Errorf("gormschema: write file %s: %w", target, err)
 	}
 	defer os.RemoveAll(".gormschema")
-	return gorun(target)
+	return gorun(target, tags)
 }
 
 // run 'go run' command and return its output.
-func gorun(target string) (string, error) {
-	s, err := gocmd("run", target)
+func gorun(target, tags string) (string, error) {
+	s, err := gocmd("run", target, tags)
 	if err != nil {
 		return "", fmt.Errorf("gormschema: %s", err)
 	}
@@ -114,8 +118,11 @@ func gorun(target string) (string, error) {
 }
 
 // goCmd runs a go command and returns its output.
-func gocmd(command, target string) (string, error) {
+func gocmd(command, target, tags string) (string, error) {
 	args := []string{command}
+	if tags != "" {
+		args = append(args, "-tags", tags)
+	}
 	args = append(args, target)
 	cmd := exec.Command("go", args...)
 	stderr := bytes.NewBuffer(nil)
