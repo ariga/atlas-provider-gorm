@@ -53,15 +53,13 @@ var viewDefiner = reflect.TypeOf((*gormschema.ViewDefiner)(nil)).Elem()
 
 func (c *LoadCmd) Run() error {
 	var (
-		tags string
-		cfg  = &packages.Config{
+		cfg = &packages.Config{
 			Mode: packages.NeedName | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedModule | packages.NeedDeps,
 		}
 	)
 
 	if c.BuildTags != "" {
-		tags = "-tags=" + c.BuildTags
-		cfg.BuildFlags = []string{tags}
+		cfg.BuildFlags = []string{"-tags=" + c.BuildTags}
 	}
 
 	var models []model
@@ -91,7 +89,7 @@ func (c *LoadCmd) Run() error {
 	if err != nil {
 		return err
 	}
-	s, err := runprog(source, tags)
+	s, err := runprog(source, c.BuildTags)
 	if err != nil {
 		return err
 	}
@@ -115,7 +113,7 @@ func runprog(src []byte, tags string) (string, error) {
 }
 
 // run 'go run' command and return its output.
-func gorun(target string, tags string) (string, error) {
+func gorun(target, tags string) (string, error) {
 	s, err := gocmd("run", target, tags)
 	if err != nil {
 		return "", fmt.Errorf("gormschema: %s", err)
@@ -124,10 +122,10 @@ func gorun(target string, tags string) (string, error) {
 }
 
 // goCmd runs a go command and returns its output.
-func gocmd(command, target string, tags string) (string, error) {
+func gocmd(command, target, tags string) (string, error) {
 	args := []string{command}
 	if tags != "" {
-		args = append(args, tags)
+		args = append(args, "-tags", tags)
 	}
 	args = append(args, target)
 	cmd := exec.Command("go", args...)
