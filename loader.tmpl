@@ -1,7 +1,7 @@
 package main
 
 import (
-  	"io"
+	"io"
 	"fmt"
 	"os"
 
@@ -13,7 +13,10 @@ import (
 )
 
 func main() {
-	stmts, err := gormschema.New("{{ .Dialect }}").Load(
+	stmts, err := gormschema.New("{{ .Dialect }}"
+		{{- if eq .Dialect "sqlserver" -}}
+			, gormschema.WithStmtDelimiter("\nGO")
+		{{- end -}}).Load(
 		{{- range .Models }}
 			&{{ .PkgName }}.{{ .Name }}{},
 		{{- end }}

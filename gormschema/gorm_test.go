@@ -25,14 +25,14 @@ func TestSQLiteConfig(t *testing.T) {
 		models.TopPetOwner{},
 	)
 	require.NoError(t, err)
-	requireEqualContent(t, sql, "testdata/sqlite_default")
+	requireEqualContent(t, sql, "testdata/sqlite_default.sql")
 	resetSession()
 	l = gormschema.New("sqlite", gormschema.WithConfig(&gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 	}))
 	sql, err = l.Load(models.UserPetHistory{}, models.Pet{}, models.User{})
 	require.NoError(t, err)
-	requireEqualContent(t, sql, "testdata/sqlite_no_fk")
+	requireEqualContent(t, sql, "testdata/sqlite_no_fk.sql")
 	resetSession()
 }
 
@@ -49,7 +49,7 @@ func TestPostgreSQLConfig(t *testing.T) {
 		models.TopPetOwner{},
 	)
 	require.NoError(t, err)
-	requireEqualContent(t, sql, "testdata/postgresql_default")
+	requireEqualContent(t, sql, "testdata/postgresql_default.sql")
 	resetSession()
 	l = gormschema.New("postgres", gormschema.WithConfig(
 		&gorm.Config{
@@ -57,7 +57,7 @@ func TestPostgreSQLConfig(t *testing.T) {
 		}))
 	sql, err = l.Load(ckmodels.Location{}, ckmodels.Event{})
 	require.NoError(t, err)
-	requireEqualContent(t, sql, "testdata/postgresql_no_fk")
+	requireEqualContent(t, sql, "testdata/postgresql_no_fk.sql")
 }
 
 func TestMySQLConfig(t *testing.T) {
@@ -73,7 +73,7 @@ func TestMySQLConfig(t *testing.T) {
 		models.TopPetOwner{},
 	)
 	require.NoError(t, err)
-	requireEqualContent(t, sql, "testdata/mysql_default")
+	requireEqualContent(t, sql, "testdata/mysql_default.sql")
 	resetSession()
 	l = gormschema.New("mysql", gormschema.WithConfig(
 		&gorm.Config{
@@ -82,27 +82,27 @@ func TestMySQLConfig(t *testing.T) {
 	))
 	sql, err = l.Load(ckmodels.Location{}, ckmodels.Event{})
 	require.NoError(t, err)
-	requireEqualContent(t, sql, "testdata/mysql_no_fk")
+	requireEqualContent(t, sql, "testdata/mysql_no_fk.sql")
 	resetSession()
 	l = gormschema.New("mysql", gormschema.WithJoinTable(&customjointable.Person{}, "Addresses", &customjointable.PersonAddress{}))
 	sql, err = l.Load(customjointable.Address{}, customjointable.Person{}, customjointable.TopCrowdedAddresses{})
 	require.NoError(t, err)
-	requireEqualContent(t, sql, "testdata/mysql_custom_join_table")
+	requireEqualContent(t, sql, "testdata/mysql_custom_join_table.sql")
 	resetSession()
 	l = gormschema.New("mysql")
 	sql, err = l.Load(customjointable.PersonAddress{}, customjointable.Address{}, customjointable.Person{}, customjointable.TopCrowdedAddresses{})
 	require.NoError(t, err)
-	requireEqualContent(t, sql, "testdata/mysql_custom_join_table")
+	requireEqualContent(t, sql, "testdata/mysql_custom_join_table.sql")
 	resetSession()
 	l = gormschema.New("mysql")
 	sql, err = l.Load(customjointable.Address{}, customjointable.PersonAddress{}, customjointable.Person{}, customjointable.TopCrowdedAddresses{})
 	require.NoError(t, err)
-	requireEqualContent(t, sql, "testdata/mysql_custom_join_table") // position of tables should not matter
+	requireEqualContent(t, sql, "testdata/mysql_custom_join_table.sql") // position of tables should not matter
 }
 
 func TestSQLServerConfig(t *testing.T) {
 	resetSession()
-	l := gormschema.New("sqlserver")
+	l := gormschema.New("sqlserver", gormschema.WithStmtDelimiter("\nGO"))
 	sql, err := l.Load(
 		models.WorkingAgedUsers{},
 		ckmodels.Location{},
@@ -113,15 +113,17 @@ func TestSQLServerConfig(t *testing.T) {
 		models.TopPetOwner{},
 	)
 	require.NoError(t, err)
-	requireEqualContent(t, sql, "testdata/sqlserver_default")
+	requireEqualContent(t, sql, "testdata/sqlserver_default.sql")
 	resetSession()
-	l = gormschema.New("sqlserver", gormschema.WithConfig(
-		&gorm.Config{
-			DisableForeignKeyConstraintWhenMigrating: true,
-		}))
+	l = gormschema.New("sqlserver",
+		gormschema.WithStmtDelimiter("\nGO"),
+		gormschema.WithConfig(
+			&gorm.Config{
+				DisableForeignKeyConstraintWhenMigrating: true,
+			}))
 	sql, err = l.Load(ckmodels.Location{}, ckmodels.Event{})
 	require.NoError(t, err)
-	requireEqualContent(t, sql, "testdata/sqlserver_no_fk")
+	requireEqualContent(t, sql, "testdata/sqlserver_no_fk.sql")
 }
 
 func resetSession() {

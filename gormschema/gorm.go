@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"strings"
 
 	"ariga.io/atlas-go-sdk/recordriver"
 	"gorm.io/driver/mysql"
@@ -21,6 +22,7 @@ type (
 	// Loader is a Loader for gorm schema.
 	Loader struct {
 		dialect           string
+		delimiter         string
 		config            *gorm.Config
 		beforeAutoMigrate []func(*gorm.DB) error
 	}
@@ -72,9 +74,18 @@ func WithJoinTable(model any, field string, jointable any) Option {
 	}
 }
 
+// WithStmtDelimiter sets the delimiter for the output.
+// The default delimiter is `;`.
+// This is helpful for SQL Server, which uses the GO keyword as a delimiter.
+func WithStmtDelimiter(delimiter string) Option {
+	return func(l *Loader) {
+		l.delimiter = delimiter
+	}
+}
+
 // New returns a new Loader.
 func New(dialect string, opts ...Option) *Loader {
-	l := &Loader{dialect: dialect, config: &gorm.Config{}}
+	l := &Loader{dialect: dialect, delimiter: ";", config: &gorm.Config{}}
 	for _, opt := range opts {
 		opt(l)
 	}
@@ -209,7 +220,13 @@ func (l *Loader) Load(models ...any) (string, error) {
 	if !ok {
 		return "", errors.New("gorm db session not found")
 	}
-	return s.Stmts(), nil
+	var buf strings.Builder
+	for _, stmt := range s.Statements {
+		if _, err = fmt.Fprintln(&buf, stmt+l.delimiter); err != nil {
+			return "", err
+		}
+	}
+	return buf.String(), nil
 }
 
 type migrator struct {
@@ -310,25 +327,23 @@ func (m *migrator) setupJoinTables(models ...any) error {
 
 // CreateViews creates the given "view-based" models
 func (m *migrator) CreateViews(views []ViewDefiner) error {
-	for _, view := range views {
-		viewName := m.DB.Config.NamingStrategy.TableName(indirect(reflect.TypeOf(view)).Name())
-		if namer, ok := view.(interface {
-			TableName() string
-		}); ok {
-			viewName = namer.TableName()
+	for _, v := range views {
+		b := &schemaBuilder{db: m.DB, viewName: m.resourceName(v)}
+		for _, o := range v.ViewDef(m.Dialector.Name()) {
+			o.apply(b)
 		}
-		schemaBuilder := &schemaBuilder{
-			db:       m.DB,
-			viewName: viewName,
-		}
-		for _, opt := range view.ViewDef(m.Dialector.Name()) {
-			opt.apply(schemaBuilder)
-		}
-		if err := m.DB.Exec(schemaBuilder.createStmt).Error; err != nil {
+		if err := m.DB.Exec(b.createStmt).Error; err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (m *migrator) resourceName(model any) string {
+	if t, ok := model.(interface{ TableName() string }); ok {
+		return t.TableName()
+	}
+	return m.DB.NamingStrategy.TableName(indirect(reflect.TypeOf(model)).Name())
 }
 
 // orderModels places join tables at the end of the list of models (if any),
