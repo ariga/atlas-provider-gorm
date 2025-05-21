@@ -12,7 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 	"text/template"
 	"time"
@@ -100,11 +100,11 @@ func runprog(src []byte, tags string) (string, error) {
 	if err := os.MkdirAll(".gormschema", os.ModePerm); err != nil {
 		return "", err
 	}
+	defer os.RemoveAll(".gormschema")
 	target := fmt.Sprintf(".gormschema/%s.go", filename("gorm"))
 	if err := os.WriteFile(target, src, 0644); err != nil {
 		return "", fmt.Errorf("gormschema: write file %s: %w", target, err)
 	}
-	defer os.RemoveAll(".gormschema")
 	return gorun(target, tags)
 }
 
@@ -178,9 +178,8 @@ func gatherModels(pkg *packages.Package, view *types.Interface) []model {
 			})
 		}
 	}
-	// Return models in deterministic order.
-	sort.Slice(models, func(i, j int) bool {
-		return models[i].Name < models[j].Name
+	slices.SortFunc(models, func(i, j model) int {
+		return strings.Compare(i.Name, j.Name)
 	})
 	return models
 }
@@ -194,21 +193,13 @@ func isGORMModel(decl any) bool {
 	if !ok {
 		return false
 	}
-	for _, f := range st.Fields.List {
+	return slices.ContainsFunc(st.Fields.List, func(f *ast.Field) bool {
 		if len(f.Names) == 0 && embedsModel(f.Type) {
 			return true
 		}
-	}
-	// Look for gorm: tag.
-	for _, f := range st.Fields.List {
-		if f.Tag == nil {
-			continue
-		}
-		if t := strings.Trim(f.Tag.Value, "`"); reflect.StructTag(t).Get("gorm") != "" {
-			return true
-		}
-	}
-	return false
+		// Look for gorm: tag.
+		return f.Tag != nil && reflect.StructTag(strings.Trim(f.Tag.Value, "`")).Get("gorm") != ""
+	})
 }
 
 // return gorm.Model from the selector expression
