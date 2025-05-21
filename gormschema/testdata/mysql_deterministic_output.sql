@@ -1,3 +1,10 @@
+-- atlas:pos hobbies[type=table] /internal/testdata/models/user.go:17
+-- atlas:pos pets[type=table] /internal/testdata/models/pet.go:11
+-- atlas:pos top_pet_owners[type=view] /internal/testdata/models/pet.go:18
+-- atlas:pos user_pet_histories[type=table] /internal/testdata/models/pet.go:38
+-- atlas:pos users[type=table] /internal/testdata/models/user.go:9
+-- atlas:pos working_aged_users[type=view] /internal/testdata/models/user.go:23
+
 CREATE TABLE `hobbies` (`id` bigint unsigned AUTO_INCREMENT,`name` longtext,PRIMARY KEY (`id`));
 CREATE TABLE `users` (`id` bigint unsigned AUTO_INCREMENT,`created_at` datetime(3) NULL,`updated_at` datetime(3) NULL,`deleted_at` datetime(3) NULL,`name` longtext,`age` bigint,PRIMARY KEY (`id`),INDEX `idx_users_deleted_at` (`deleted_at`));
 CREATE TABLE `user_hobbies` (`user_id` bigint unsigned,`hobby_id` bigint unsigned,PRIMARY KEY (`user_id`,`hobby_id`));

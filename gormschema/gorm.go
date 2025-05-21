@@ -5,6 +5,8 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"io"
+	"maps"
 	"reflect"
 	"slices"
 	"strings"
@@ -25,6 +27,7 @@ type (
 		delimiter         string
 		config            *gorm.Config
 		beforeAutoMigrate []func(*gorm.DB) error
+		modelPos          map[any]string
 	}
 	// Option configures the Loader.
 	Option func(*Loader)
@@ -80,6 +83,14 @@ func WithJoinTable(model any, field string, jointable any) Option {
 func WithStmtDelimiter(delimiter string) Option {
 	return func(l *Loader) {
 		l.delimiter = delimiter
+	}
+}
+
+// WithModelPosition sets the model position in the output.
+// The position is used to generate the `-- atlas:pos` directive in the output.
+func WithModelPosition(pos map[any]string) Option {
+	return func(l *Loader) {
+		l.modelPos = pos
 	}
 }
 
@@ -221,12 +232,38 @@ func (l *Loader) Load(models ...any) (string, error) {
 		return "", errors.New("gorm db session not found")
 	}
 	var buf strings.Builder
+	if err = l.directives(&buf, cm); err != nil {
+		return "", err
+	}
 	for _, stmt := range s.Statements {
 		if _, err = fmt.Fprintln(&buf, stmt+l.delimiter); err != nil {
 			return "", err
 		}
 	}
 	return buf.String(), nil
+}
+
+func (l *Loader) directives(w io.Writer, cm *migrator) error {
+	if len(l.modelPos) > 0 {
+		pos := map[string]string{}
+		for m, p := range l.modelPos {
+			t := "table"
+			if _, v := m.(ViewDefiner); v {
+				t = "view"
+			}
+			pos[fmt.Sprintf("%s[type=%s]", cm.resourceName(m), t)] = p
+		}
+		for _, r := range slices.Sorted(maps.Keys(pos)) {
+			if _, err := fmt.Fprintln(w, "-- atlas:pos", r, pos[r]); err != nil {
+				return err
+			}
+		}
+		// Add another new line to separate the file directives from the statements.
+		if _, err := fmt.Fprintln(w); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type migrator struct {

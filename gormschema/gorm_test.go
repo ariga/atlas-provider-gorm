@@ -84,17 +84,35 @@ func TestMySQLConfig(t *testing.T) {
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_no_fk.sql")
 	resetSession()
-	l = gormschema.New("mysql", gormschema.WithJoinTable(&customjointable.Person{}, "Addresses", &customjointable.PersonAddress{}))
+	l = gormschema.New("mysql",
+		gormschema.WithModelPosition(map[any]string{
+			&customjointable.Person{}:              "/internal/testdata/customjointable/models.go:11",
+			&customjointable.Address{}:             "/internal/testdata/customjointable/models.go:17",
+			&customjointable.PersonAddress{}:       "/internal/testdata/customjointable/models.go:22",
+			&customjointable.TopCrowdedAddresses{}: "/internal/testdata/customjointable/models.go:29",
+		}),
+		gormschema.WithJoinTable(&customjointable.Person{}, "Addresses", &customjointable.PersonAddress{}),
+	)
 	sql, err = l.Load(customjointable.Address{}, customjointable.Person{}, customjointable.TopCrowdedAddresses{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_custom_join_table.sql")
 	resetSession()
-	l = gormschema.New("mysql")
+	l = gormschema.New("mysql", gormschema.WithModelPosition(map[any]string{
+		&customjointable.Person{}:              "/internal/testdata/customjointable/models.go:11",
+		&customjointable.Address{}:             "/internal/testdata/customjointable/models.go:17",
+		&customjointable.PersonAddress{}:       "/internal/testdata/customjointable/models.go:22",
+		&customjointable.TopCrowdedAddresses{}: "/internal/testdata/customjointable/models.go:29",
+	}))
 	sql, err = l.Load(customjointable.PersonAddress{}, customjointable.Address{}, customjointable.Person{}, customjointable.TopCrowdedAddresses{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_custom_join_table.sql")
 	resetSession()
-	l = gormschema.New("mysql")
+	l = gormschema.New("mysql", gormschema.WithModelPosition(map[any]string{
+		&customjointable.Person{}:              "/internal/testdata/customjointable/models.go:11",
+		&customjointable.Address{}:             "/internal/testdata/customjointable/models.go:17",
+		&customjointable.PersonAddress{}:       "/internal/testdata/customjointable/models.go:22",
+		&customjointable.TopCrowdedAddresses{}: "/internal/testdata/customjointable/models.go:29",
+	}))
 	sql, err = l.Load(customjointable.Address{}, customjointable.PersonAddress{}, customjointable.Person{}, customjointable.TopCrowdedAddresses{})
 	require.NoError(t, err)
 	requireEqualContent(t, sql, "testdata/mysql_custom_join_table.sql") // position of tables should not matter
