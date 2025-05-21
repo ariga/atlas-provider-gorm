@@ -1,3 +1,8 @@
+-- atlas:pos addresses[type=table] /internal/testdata/customjointable/models.go:17
+-- atlas:pos people[type=table] /internal/testdata/customjointable/models.go:11
+-- atlas:pos person_addresses[type=table] /internal/testdata/customjointable/models.go:22
+-- atlas:pos top_crowded_addresses[type=view] /internal/testdata/customjointable/models.go:29
+
 CREATE TABLE `addresses` (`id` bigint AUTO_INCREMENT,`name` longtext,PRIMARY KEY (`id`));
 CREATE TABLE `people` (`id` bigint AUTO_INCREMENT,`name` longtext,PRIMARY KEY (`id`));
 CREATE TABLE `person_addresses` (`person_id` bigint,`address_id` bigint,`created_at` datetime(3) NULL,`deleted_at` datetime(3) NULL,PRIMARY KEY (`person_id`,`address_id`));

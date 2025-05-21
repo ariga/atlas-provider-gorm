@@ -104,6 +104,11 @@ type model struct {
 	ImportPath string
 	PkgName    string
 	Name       string
+	Pos        string
+}
+
+func (m model) String() string {
+	return fmt.Sprintf("%s.%s", m.PkgName, m.Name)
 }
 
 func gatherModels(pkg *packages.Package, view *types.Interface) []model {
@@ -114,10 +119,12 @@ func gatherModels(pkg *packages.Package, view *types.Interface) []model {
 			continue
 		}
 		if isGORMModel(k.Obj.Decl) || types.Implements(typ.Type(), view) {
+			p := pkg.Fset.Position(k.Pos())
 			models = append(models, model{
 				ImportPath: pkg.PkgPath,
 				Name:       k.Name,
 				PkgName:    pkg.Name,
+				Pos:        fmt.Sprintf("%s:%d", p.Filename, p.Line),
 			})
 		}
 	}

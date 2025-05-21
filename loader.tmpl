@@ -16,9 +16,14 @@ func main() {
 	stmts, err := gormschema.New("{{ .Dialect }}"
 		{{- if eq .Dialect "sqlserver" -}}
 			, gormschema.WithStmtDelimiter("\nGO")
-		{{- end -}}).Load(
+		{{- end -}}
+			, gormschema.WithModelPosition(map[any]string{
+				{{- range .Models }}
+					&{{ . }}{}: "{{ .Pos }}",
+				{{- end }}
+				})).Load(
 		{{- range .Models }}
-			&{{ .PkgName }}.{{ .Name }}{},
+			&{{ . }}{},
 		{{- end }}
 	)
 	if err != nil {
