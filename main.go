@@ -1,26 +1,21 @@
 package main
 
 import (
-	"bytes"
 	_ "embed"
-	"errors"
 	"fmt"
 	"go/ast"
-	"go/format"
 	"go/types"
 	"io"
 	"os"
-	"os/exec"
 	"reflect"
 	"slices"
 	"strings"
 	"text/template"
-	"time"
 
+	"ariga.io/atlas-go-sdk/tmplrun"
+	"ariga.io/atlas-provider-gorm/gormschema"
 	"github.com/alecthomas/kong"
 	"golang.org/x/tools/go/packages"
-
-	"ariga.io/atlas-provider-gorm/gormschema"
 )
 
 var (
@@ -73,19 +68,11 @@ func (c *LoadCmd) Run() error {
 			Lookup(viewDefiner.Name()).Type().
 			Underlying().(*types.Interface))
 	}
-	p := Payload{
-		Models:  models,
-		Dialect: c.Dialect,
-	}
-	var buf bytes.Buffer
-	if err := loaderTmpl.Execute(&buf, p); err != nil {
-		return err
-	}
-	source, err := format.Source(buf.Bytes())
-	if err != nil {
-		return err
-	}
-	s, err := runprog(source, c.BuildTags)
+	s, err := tmplrun.New("gormschema", loaderTmpl, tmplrun.WithBuildTags(c.BuildTags)).
+		Run(Payload{
+			Models:  models,
+			Dialect: c.Dialect,
+		})
 	if err != nil {
 		return err
 	}
@@ -94,50 +81,6 @@ func (c *LoadCmd) Run() error {
 	}
 	_, err = fmt.Fprintln(c.out, s)
 	return err
-}
-
-func runprog(src []byte, tags string) (string, error) {
-	if err := os.MkdirAll(".gormschema", os.ModePerm); err != nil {
-		return "", err
-	}
-	defer os.RemoveAll(".gormschema")
-	target := fmt.Sprintf(".gormschema/%s.go", filename("gorm"))
-	if err := os.WriteFile(target, src, 0644); err != nil {
-		return "", fmt.Errorf("gormschema: write file %s: %w", target, err)
-	}
-	return gorun(target, tags)
-}
-
-// run 'go run' command and return its output.
-func gorun(target, tags string) (string, error) {
-	s, err := gocmd("run", target, tags)
-	if err != nil {
-		return "", fmt.Errorf("gormschema: %s", err)
-	}
-	return s, nil
-}
-
-// goCmd runs a go command and returns its output.
-func gocmd(command, target, tags string) (string, error) {
-	args := []string{command}
-	if tags != "" {
-		args = append(args, "-tags", tags)
-	}
-	args = append(args, target)
-	cmd := exec.Command("go", args...)
-	stderr := bytes.NewBuffer(nil)
-	stdout := bytes.NewBuffer(nil)
-	cmd.Stderr = stderr
-	cmd.Stdout = stdout
-	if err := cmd.Run(); err != nil {
-		return "", errors.New(stderr.String())
-	}
-	return stdout.String(), nil
-}
-
-func filename(pkg string) string {
-	name := strings.ReplaceAll(pkg, "/", "_")
-	return fmt.Sprintf("atlasloader_%s_%d", name, time.Now().Unix())
 }
 
 type Payload struct {
