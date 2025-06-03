@@ -9,7 +9,7 @@ schema [drift detection](https://atlasgo.io/monitoring/drift-detection), and [sc
 objects such as triggers, row-level security, and custom functions that are not supported natively.
 
 ### Use-cases
-1. [**Declarative migrations**](https://atlasgo.io/declarative/apply) - Use a Terraform-like `atlas schema apply --env gorm` to apply your GORM schema to the database.
+1. [**Declarative migrations**](https://atlasgo.io/declarative/apply) - Use the Terraform-like `atlas schema apply --env gorm` command to apply your GORM schema to the database.
 2. [**Automatic migration planning**](https://atlasgo.io/versioned/diff) - Use `atlas migrate diff --env gorm` to automatically plan database schema changes and generate
    a migration from the current database version to the desired version defined by your GORM schema.
 
