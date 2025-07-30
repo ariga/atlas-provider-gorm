@@ -186,7 +186,8 @@ func (l *Loader) Load(models ...any) (string, error) {
 	default:
 		return "", fmt.Errorf("unsupported engine: %s", l.dialect)
 	}
-	db, err := gorm.Open(di, l.config)
+	cfg := *l.config
+	db, err := gorm.Open(di, &cfg)
 	if err != nil {
 		return "", err
 	}
