@@ -1,11 +1,11 @@
 module ariga.io/atlas-provider-gorm
 
-go 1.23.0
+go 1.24
 
-toolchain go1.23.3
+toolchain go1.24.5
 
 require (
-	ariga.io/atlas-go-sdk v0.7.2
+	ariga.io/atlas v0.36.2-0.20250801020723-2aaaf0682dd9
 	github.com/alecthomas/kong v1.9.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/tools v0.31.0
@@ -27,8 +27,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
-	github.com/kr/text v0.2.0 // indirect
-	github.com/mattn/go-sqlite3 v1.14.22 // indirect
+	github.com/mattn/go-sqlite3 v1.14.28 // indirect
 	github.com/microsoft/go-mssqldb v1.7.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
