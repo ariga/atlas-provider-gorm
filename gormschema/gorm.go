@@ -11,7 +11,7 @@ import (
 	"slices"
 	"strings"
 
-	"ariga.io/atlas-go-sdk/recordriver"
+	"ariga.io/atlas/sdk/recordriver"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"

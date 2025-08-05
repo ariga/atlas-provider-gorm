@@ -4,11 +4,11 @@ import (
 	"os"
 	"testing"
 
-	"ariga.io/atlas-go-sdk/recordriver"
 	"ariga.io/atlas-provider-gorm/gormschema"
 	ckmodels "ariga.io/atlas-provider-gorm/internal/testdata/circularfks"
 	"ariga.io/atlas-provider-gorm/internal/testdata/customjointable"
 	"ariga.io/atlas-provider-gorm/internal/testdata/models"
+	"ariga.io/atlas/sdk/recordriver"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )

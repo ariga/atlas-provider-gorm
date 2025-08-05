@@ -12,8 +12,8 @@ import (
 	"strings"
 	"text/template"
 
-	"ariga.io/atlas-go-sdk/tmplrun"
 	"ariga.io/atlas-provider-gorm/gormschema"
+	"ariga.io/atlas/sdk/tmplrun"
 	"github.com/alecthomas/kong"
 	"golang.org/x/tools/go/packages"
 )
