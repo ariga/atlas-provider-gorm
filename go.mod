@@ -5,7 +5,7 @@ go 1.24
 toolchain go1.24.5
 
 require (
-	ariga.io/atlas v0.36.2-0.20250801020723-2aaaf0682dd9
+	ariga.io/atlas v0.36.2-0.20250806044935-5bb51a0a956e
 	github.com/alecthomas/kong v1.9.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/tools v0.31.0

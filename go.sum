@@ -1,5 +1,5 @@
-ariga.io/atlas v0.36.2-0.20250801020723-2aaaf0682dd9 h1:VThMXS+2vNPknqRcUD0ufbYybrmq7J+LbsRBx5ZD1sI=
-ariga.io/atlas v0.36.2-0.20250801020723-2aaaf0682dd9/go.mod h1:Ex5l1xHsnWQUc3wYnrJ9gD7RUEzG76P7ZRQp8wNr0wc=
+ariga.io/atlas v0.36.2-0.20250806044935-5bb51a0a956e h1:7upp27oOT/fmM5Dz3z9k8cmYwKJ2NAzuTqfT/rEP+50=
+ariga.io/atlas v0.36.2-0.20250806044935-5bb51a0a956e/go.mod h1:Ex5l1xHsnWQUc3wYnrJ9gD7RUEzG76P7ZRQp8wNr0wc=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.7.0/go.mod h1:bjGvMhVMb+EEm3VRNQawDMUyMMjo+S5ewNjflkep/0Q=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.7.1/go.mod h1:bjGvMhVMb+EEm3VRNQawDMUyMMjo+S5ewNjflkep/0Q=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.1 h1:lGlwhPtrX6EVml1hO0ivjkUxsSyl4dsiw9qcA1k/3IQ=
