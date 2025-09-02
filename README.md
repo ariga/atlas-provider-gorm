@@ -286,6 +286,7 @@ The provider supports the following databases:
 * PostgreSQL
 * SQLite
 * SQL Server
+* Google Spanner
 
 ### Frequently Asked Questions
 
