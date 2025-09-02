@@ -19,6 +19,8 @@ objects such as triggers, row-level security, and custom functions that are not 
 Install Atlas from macOS or Linux by running:
 ```bash
 curl -sSf https://atlasgo.sh | sh
+# If you are using spanner driver, run:
+# curl -sSf https://atlasgo.sh | ATLAS_VERSION="beta" sh
 ```
 See [atlasgo.io](https://atlasgo.io/getting-started#installation) for more installation options.
 

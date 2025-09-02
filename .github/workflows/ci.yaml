@@ -37,21 +37,17 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go }}
-      - run: |
-          curl -sSf 'https://atlasgo.sh?test=1' | sh
-        env:
-          ATLAS_DEBUG: true
+      - uses: ariga/setup-atlas@v0
+        with:
+          cloud-token: '${{ secrets.ATLAS_TOKEN }}'
+          version: 'beta'
       - working-directory: internal/testdata
         run: |
           atlas migrate diff --env gorm --var dialect=${{ matrix.dialect }}
-        env:
-          ATLAS_TOKEN: ${{ secrets.ATLAS_TOKEN }}
       - name: Migrate Diff Circular Foreign keys
         working-directory: internal/testdata/circularfks
         run: |
           atlas migrate diff --env gorm --var dialect=${{ matrix.dialect }}
-        env:
-          ATLAS_TOKEN: ${{ secrets.ATLAS_TOKEN }}
       - name: Verify migrations generated
         run: |
           status=$(git status --porcelain)
