@@ -8,6 +8,7 @@ locals {
     postgres = "docker://postgres/15"
     sqlserver = "docker://sqlserver/2022-latest"
     sqlite = "sqlite://file::memory:?cache=shared"
+    spanner = "docker://spanner/latest"
   }[var.dialect]
 }
 

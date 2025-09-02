@@ -40,7 +40,7 @@ type LoadCmd struct {
 	Path      string   `help:"path to schema package" required:""`
 	BuildTags string   `help:"build tags to use" default:""`
 	Models    []string `help:"Models to load"`
-	Dialect   string   `help:"dialect to use" enum:"mysql,sqlite,postgres,sqlserver" required:""`
+	Dialect   string   `help:"dialect to use" enum:"mysql,sqlite,postgres,sqlserver,spanner" required:""`
 	out       io.Writer
 }
 

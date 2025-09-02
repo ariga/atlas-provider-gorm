@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"ariga.io/atlas/sdk/recordriver"
+	spannergorm "github.com/googleapis/go-gorm-spanner"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -183,6 +184,12 @@ func (l *Loader) Load(models ...any) (string, error) {
 			DriverName: "recordriver",
 			DSN:        "gorm",
 		})
+	case "spanner":
+		di = spannergorm.New(spannergorm.Config{
+			DriverName:                 "recordriver",
+			DisableAutoMigrateBatching: true,
+			DSN:                        "gorm",
+		})
 	default:
 		return "", fmt.Errorf("unsupported engine: %s", l.dialect)
 	}
@@ -237,6 +244,9 @@ func (l *Loader) Load(models ...any) (string, error) {
 		return "", err
 	}
 	for _, stmt := range s.Statements {
+		if stmt == "" {
+			continue
+		}
 		if _, err = fmt.Fprintln(&buf, stmt+l.delimiter); err != nil {
 			return "", err
 		}
