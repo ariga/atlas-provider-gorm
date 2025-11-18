@@ -2,6 +2,7 @@ package gormschema_test
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"ariga.io/atlas-provider-gorm/gormschema"
@@ -154,5 +155,9 @@ func resetSession() {
 func requireEqualContent(t *testing.T, actual, fileName string) {
 	buf, err := os.ReadFile(fileName)
 	require.NoError(t, err)
-	require.Equal(t, string(buf), actual)
+	require.Equal(t, normalizeNewlines(string(buf)), normalizeNewlines(actual))
+}
+
+func normalizeNewlines(s string) string {
+	return strings.ReplaceAll(s, "\r\n", "\n")
 }
