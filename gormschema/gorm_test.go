@@ -54,6 +54,27 @@ func TestAutoMigrateModelTableName(t *testing.T) {
 		})
 	}
 }
+
+func TestAutoMigrateModelIndexType(t *testing.T) {
+	resetSession()
+
+	l := gormschema.New("postgres")
+	sql, err := l.Load(models.TestModelIndexType{})
+	require.NoError(t, err)
+	require.Contains(t, sql, `CREATE INDEX IF NOT EXISTS "idx_test_model_index_type_name_gin" ON "test_model_index_type" USING gin("name");`)
+	require.Contains(t, sql, `CREATE INDEX IF NOT EXISTS "idx_test_model_index_type_name_profile_gin" ON "test_model_index_type" USING gin("name","profile");`)
+}
+
+func TestAutoMigrateModelIndexTypeEmptyUsesDatabaseDefault(t *testing.T) {
+	resetSession()
+
+	l := gormschema.New("postgres")
+	sql, err := l.Load(models.TestModelValueReceiver{})
+	require.NoError(t, err)
+	require.Contains(t, sql, `CREATE UNIQUE INDEX IF NOT EXISTS "idx_test_model_unique" ON "test_model_value_receiver" ("name","age");`)
+	require.NotContains(t, sql, `USING btree`)
+}
+
 func TestPostgreSQLConfig(t *testing.T) {
 	resetSession()
 	l := gormschema.New("postgres")

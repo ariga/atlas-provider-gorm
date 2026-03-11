@@ -30,6 +30,7 @@ func NullsLast[T any](c Col[T]) Col[T]     { c.Nulls = "last"; return c }
 type IndexDefinition[T any] struct {
 	Name    string
 	Columns []Col[T] // order => priority:1..N
+	Type    string   // e.g. "gin", "btree", "brin"
 	Unique  bool
 	Where   string // e.g. "deleted_at IS NULL"
 }
@@ -137,9 +138,11 @@ func collectIndexTagsFromIndexesValue(baseStruct reflect.Type, defsSlice reflect
 			return nil, fmt.Errorf("Indexes()[%d] is not a struct", i)
 		}
 
-		// Expect fields: Name string, Columns []Col[?], Unique bool, Where string
+		// Expect fields: Name string, Columns []Col[?], Unique bool, Where string.
+		// Type is optional for backward compatibility with older reflected shapes.
 		nameF := def.FieldByName("Name")
 		colsF := def.FieldByName("Columns")
+		typeF := def.FieldByName("Type")
 		uniqueF := def.FieldByName("Unique")
 		whereF := def.FieldByName("Where")
 
@@ -147,6 +150,10 @@ func collectIndexTagsFromIndexesValue(baseStruct reflect.Type, defsSlice reflect
 			return nil, fmt.Errorf("Indexes()[%d] doesn't look like IndexDefinition", i)
 		}
 		name := nameF.String()
+		indexType := ""
+		if typeF.IsValid() {
+			indexType = strings.TrimSpace(typeF.String())
+		}
 		unique := uniqueF.Bool()
 		where := strings.TrimSpace(whereF.String())
 
@@ -187,6 +194,9 @@ func collectIndexTagsFromIndexesValue(baseStruct reflect.Type, defsSlice reflect
 			}
 			if j == 0 && unique {
 				parts = append(parts, "unique")
+			}
+			if j == 0 && indexType != "" {
+				parts = append(parts, "type:"+indexType)
 			}
 			if j == 0 && where != "" {
 				parts = append(parts, "where:"+where)
