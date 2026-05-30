@@ -31,6 +31,7 @@ func TestLoad(t *testing.T) {
 func TestDeterministicOutput(t *testing.T) {
 	expected, err := os.ReadFile("./gormschema/testdata/mysql_deterministic_output.sql")
 	require.NoError(t, err)
+	expectedNormalized := normalizeOutput(string(expected), "")
 	cmd := &LoadCmd{Path: "./internal/testdata/models", Dialect: "mysql"}
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
@@ -40,7 +41,7 @@ func TestDeterministicOutput(t *testing.T) {
 		err := cmd.Run()
 		require.NoError(t, err)
 		actual := bytes.TrimSuffix(buf.Bytes(), []byte("\n"))
-		require.Equal(t, string(expected), strings.ReplaceAll(string(actual), cwd, ""))
+		require.Equal(t, expectedNormalized, normalizeOutput(string(actual), cwd))
 	}
 }
 
@@ -57,7 +58,7 @@ func TestCustomizeTablesLoad(t *testing.T) {
 	expected, err := os.ReadFile("./gormschema/testdata/mysql_custom_join_table.sql")
 	require.NoError(t, err)
 	actual := bytes.TrimSuffix(buf.Bytes(), []byte("\n"))
-	require.Equal(t, string(expected), strings.ReplaceAll(string(actual), cwd, ""))
+	require.Equal(t, normalizeOutput(string(expected), ""), normalizeOutput(string(actual), cwd))
 }
 
 func TestBuildTags(t *testing.T) {
@@ -85,4 +86,12 @@ func TestNonBuildTags(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, buf.String(), "CREATE TABLE `untagged_models`")
 	require.NotContains(t, buf.String(), "CREATE TABLE `tagged_models`")
+}
+
+func normalizeOutput(s, cwd string) string {
+	if cwd != "" {
+		s = strings.ReplaceAll(s, cwd, "")
+	}
+	s = strings.ReplaceAll(s, "\r\n", "\n")
+	return strings.ReplaceAll(s, "\\", "/")
 }

@@ -1,8 +1,6 @@
 package gormschema
 
 import (
-	"database/sql"
-	"database/sql/driver"
 	"errors"
 	"fmt"
 	"io"
@@ -12,11 +10,6 @@ import (
 	"strings"
 
 	"ariga.io/atlas/sdk/recordriver"
-	spannergorm "github.com/googleapis/go-gorm-spanner"
-	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
-	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	gormig "gorm.io/gorm/migrator"
 )
@@ -153,45 +146,9 @@ func (l *Loader) Load(models ...any) (string, error) {
 			tables = append(tables, obj)
 		}
 	}
-	var di gorm.Dialector
-	switch l.dialect {
-	case "sqlite":
-		rd, err := sql.Open("recordriver", "gorm")
-		if err != nil {
-			return "", err
-		}
-		di = sqlite.Dialector{Conn: rd}
-		recordriver.SetResponse("gorm", "select sqlite_version()", &recordriver.Response{
-			Cols: []string{"sqlite_version()"},
-			Data: [][]driver.Value{{"3.30.1"}},
-		})
-	case "mysql":
-		di = mysql.New(mysql.Config{
-			DriverName: "recordriver",
-			DSN:        "gorm",
-		})
-		recordriver.SetResponse("gorm", "SELECT VERSION()", &recordriver.Response{
-			Cols: []string{"VERSION()"},
-			Data: [][]driver.Value{{"8.0.24"}},
-		})
-	case "postgres":
-		di = postgres.New(postgres.Config{
-			DriverName: "recordriver",
-			DSN:        "gorm",
-		})
-	case "sqlserver":
-		di = sqlserver.New(sqlserver.Config{
-			DriverName: "recordriver",
-			DSN:        "gorm",
-		})
-	case "spanner":
-		di = spannergorm.New(spannergorm.Config{
-			DriverName:                 "recordriver",
-			DisableAutoMigrateBatching: true,
-			DSN:                        "gorm",
-		})
-	default:
-		return "", fmt.Errorf("unsupported engine: %s", l.dialect)
+	di, err := l.resolveDialector()
+	if err != nil {
+		return "", err
 	}
 	cfg := *l.config
 	db, err := gorm.Open(di, &cfg)

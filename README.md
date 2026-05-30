@@ -29,6 +29,19 @@ Install the provider by running:
 go get -u ariga.io/atlas-provider-gorm
 ``` 
 
+#### Optional dialects (e.g. Google Spanner)
+
+The default build ships with MySQL, PostgreSQL, SQLite and SQL Server support.  
+To enable Google Spanner (or other optional dialects), install and blank-import the relevant submodule:
+
+```bash
+go get -u ariga.io/atlas-provider-gorm/gormschema/dialect/spanner
+```
+
+```go
+import _ "ariga.io/atlas-provider-gorm/gormschema/dialect/spanner"
+```
+
 #### Standalone 
 
 If all of your GORM models and [views](#views) exist in a single package, and the models either embed `gorm.Model` or contain `gorm` struct tags, 
@@ -283,12 +296,14 @@ atlas migrate diff --env gorm
 
 ### Supported Databases
 
-The provider supports the following databases:
+The core provider ships with:
 * MySQL
 * PostgreSQL
 * SQLite
 * SQL Server
-* Google Spanner
+
+Optional dialects can register themselves via submodules, for example:
+* Google Spanner (`go get ariga.io/atlas-provider-gorm/gormschema/dialect/spanner`)
 
 ### Frequently Asked Questions
 
